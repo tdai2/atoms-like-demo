@@ -1,0 +1,35 @@
+{
+    "title": "usage_quotas",
+    "description": "按周期统计的用户生成配额，作为生成接口的前置校验",
+    "type": "object",
+    "properties": {
+        "id": {
+            "type": "integer",
+            "description": "自增主键"
+        },
+        "user_id": {
+            "type": "string",
+            "description": "所属用户标识，由系统维护"
+        },
+        "period": {
+            "type": "string",
+            "description": "统计周期，格式为 YYYY-MM"
+        },
+        "plan": {
+            "type": "string",
+            "description": "套餐标识，取值为 free / pro / team"
+        },
+        "used": {
+            "type": "integer",
+            "description": "本周期已使用的生成次数"
+        },
+        "quota_limit": {
+            "type": "integer",
+            "description": "本周期允许的生成次数上限"
+        }
+    },
+    "required": [
+        "period",
+        "user_id"
+    ]
+}

@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowRight, Check, Play, Loader2 } from 'lucide-react';
+import { ArrowRight, Check, Play, Loader2, AlertTriangle } from 'lucide-react';
 import SiteHeader from '@/components/SiteHeader';
 import MiniApp from '@/components/MiniApp';
 import {
@@ -10,18 +10,20 @@ import {
   PROMPT_PRESETS,
   TEMPLATES,
   TEMPLATE_CATEGORIES,
-  TEST_RESULTS,
   type MiniAppKind,
-  type PromptPreset,
 } from '@/data/site';
 import { cn } from '@/lib/utils';
+import { useAuthStatus } from '@/hooks/useAuthStatus';
+import { useCreateProject, useProjectPipeline } from '@/hooks/useProjects';
+import { apiErrorMessage, type StageState } from '@/lib/projects';
+import { consumeStartFreeIntent, onStartFreeFocus, peekStartFreeIntent } from '@/lib/startFree';
 
-function pickPreset(text: string): PromptPreset {
-  const t = text.toLowerCase();
-  if (/落地页|官网|品牌|landing|营销/.test(t)) return PROMPT_PRESETS[1];
-  if (/待办|任务|todo|协作|清单/.test(t)) return PROMPT_PRESETS[2];
-  if (/看板|数据|dashboard|指标|报表/.test(t)) return PROMPT_PRESETS[0];
-  return PROMPT_PRESETS[0];
+/** 依据服务端方案（页面与实体）决定预览窗渲染哪种迷你应用。 */
+function pickKind(prompt: string, pages: string[], entities: string[]): MiniAppKind {
+  const text = `${prompt} ${pages.join(' ')} ${entities.join(' ')}`.toLowerCase();
+  if (/商城|电商|商品|订单|结算|购物车|落地页|官网|品牌/.test(text)) return 'landing';
+  if (/任务|待办|todo|协作|清单/.test(text)) return 'todo';
+  return 'dashboard';
 }
 
 function Wireframe({ wire, accent }: { wire: string; accent: string }) {
@@ -66,36 +68,81 @@ function Wireframe({ wire, accent }: { wire: string; accent: string }) {
 
 export default function Index() {
   const [input, setInput] = useState('');
-  const [phase, setPhase] = useState<'idle' | 'running' | 'done'>('idle');
-  const [stepIndex, setStepIndex] = useState(-1);
-  const [result, setResult] = useState<PromptPreset>(PROMPT_PRESETS[0]);
+  const [projectId, setProjectId] = useState<number | null>(null);
   const [category, setCategory] = useState<(typeof TEMPLATE_CATEGORIES)[number]>('全部');
-  const timers = useRef<number[]>([]);
+  const promptRef = useRef<HTMLTextAreaElement>(null);
 
-  useEffect(() => () => timers.current.forEach((t) => window.clearTimeout(t)), []);
+  const { state: authState, login } = useAuthStatus();
+  const create = useCreateProject();
+  const pipeline = useProjectPipeline(projectId, true);
+
+  // 滚动到需求输入区并聚焦，供「免费开始」入口与意图监听复用。
+  useEffect(() => {
+    const focusPrompt = () => {
+      const section = document.getElementById('console');
+      const smooth = !window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      section?.scrollIntoView({ behavior: smooth ? 'smooth' : 'auto', block: 'start' });
+      promptRef.current?.focus({ preventScroll: true });
+    };
+    return onStartFreeFocus(focusPrompt);
+  }, []);
+
+  // 入口点击时登录会离开本页，回到首页后在这里消费意图，直接落到输入区。
+  useEffect(() => {
+    if (authState !== 'authenticated' || !peekStartFreeIntent()) return;
+    consumeStartFreeIntent();
+    // 等布局稳定后再滚动，避免与浏览器恢复的滚动位置相互覆盖。
+    const timer = window.setTimeout(() => {
+      document.getElementById('console')?.scrollIntoView({ block: 'start' });
+      promptRef.current?.focus({ preventScroll: true });
+    }, 80);
+    return () => window.clearTimeout(timer);
+  }, [authState]);
+
+  const project = pipeline.data?.project;
+  const stages = pipeline.data?.stages ?? [];
+  const spec = pipeline.data?.spec;
+  const testReport = pipeline.data?.test_report ?? [];
+  const quota = pipeline.data?.quota;
+
+  const phase: 'idle' | 'running' | 'done' | 'failed' = !project
+    ? 'idle'
+    : project.status === 'failed'
+      ? 'failed'
+      : project.status === 'succeeded'
+        ? 'done'
+        : 'running';
+  const activeStage = stages.find((s) => s.stage_state === 'running');
+  const busy = create.isPending || phase === 'running';
+
+  // 有后端流水线时展示真实阶段状态，否则展示待执行的阶段清单。
+  const timeline: { id: string; title: string; detail: string; state: StageState }[] = stages.length
+    ? stages.map((s) => ({
+        id: s.stage,
+        title: s.stage_name,
+        detail: s.stage_log.split('\n').filter(Boolean).slice(-1)[0] ?? '',
+        state: s.stage_state,
+      }))
+    : BUILD_STEPS.map((s) => ({ id: s.id, title: s.title, detail: s.detail, state: 'pending' }));
 
   const run = (text: string) => {
     const value = text.trim();
-    if (!value) return;
-    timers.current.forEach((t) => window.clearTimeout(t));
-    timers.current = [];
-    setResult(pickPreset(value));
-    setPhase('running');
-    setStepIndex(0);
-    BUILD_STEPS.forEach((_, i) => {
-      const id = window.setTimeout(() => {
-        if (i === BUILD_STEPS.length - 1) {
-          setStepIndex(BUILD_STEPS.length);
-          setPhase('done');
-        } else {
-          setStepIndex(i + 1);
-        }
-      }, (i + 1) * 700);
-      timers.current.push(id);
-    });
+    if (!value || busy) return;
+    // 生成任务归属账号，未登录时先走统一登录入口。
+    if (authState !== 'authenticated') {
+      login();
+      return;
+    }
+    create.mutate({ prompt: value }, { onSuccess: (data) => setProjectId(data.project.id) });
   };
 
-  const previewKind: MiniAppKind = result.kind;
+  const errorText = create.isError
+    ? apiErrorMessage(create.error, '生成任务创建失败，请稍后重试')
+    : pipeline.isError && projectId !== null
+      ? apiErrorMessage(pipeline.error, '任务状态读取失败')
+      : '';
+
+  const previewKind: MiniAppKind = pickKind(input || project?.prompt || '', spec?.pages ?? [], spec?.entities ?? []);
   const filtered = category === '全部' ? TEMPLATES : TEMPLATES.filter((t) => t.category === category);
 
   return (
@@ -128,6 +175,7 @@ export default function Index() {
                 </label>
                 <textarea
                   id="prompt"
+                  ref={promptRef}
                   value={input}
                   onChange={(e) => setInput(e.target.value)}
                   onKeyDown={(e) => {
@@ -153,42 +201,63 @@ export default function Index() {
                   <span className="font-mono-ui hidden text-[11px] text-[#6b727c] sm:block">⌘ + Enter 运行</span>
                   <button
                     type="button"
-                    disabled={!input.trim() || phase === 'running'}
+                    disabled={!input.trim() || busy}
                     onClick={() => run(input)}
                     className={cn(
                       'focus-ring inline-flex h-11 items-center gap-2 rounded-[10px] bg-[#c8f751] px-5 text-[15px] font-semibold text-[#0b0c0e] transition-colors hover:bg-[#b4e23c]',
-                      (!input.trim() || phase === 'running') && 'pointer-events-none opacity-45',
+                      (!input.trim() || busy) && 'pointer-events-none opacity-45',
                     )}
                   >
-                    {phase === 'running' ? <Loader2 size={16} className="animate-spin" /> : <Play size={16} />}
-                    {phase === 'running' ? '生成中' : '生成应用'}
+                    {busy ? <Loader2 size={16} className="animate-spin" /> : <Play size={16} />}
+                    {busy ? '生成中' : '生成应用'}
                   </button>
                 </div>
               </div>
 
               <ol className="mt-6 grid gap-2 sm:grid-cols-2">
-                {BUILD_STEPS.map((s, i) => {
-                  const state = stepIndex > i ? 'done' : stepIndex === i && phase === 'running' ? 'running' : 'pending';
-                  return (
-                    <li key={s.id} className="flex items-start gap-2.5 rounded-[10px] border border-[#24272d] bg-[#141619] px-3 py-2.5">
-                      <span
-                        className={cn(
-                          'mt-1.5 h-2 w-2 shrink-0 rounded-full',
-                          state === 'done' && 'bg-[#4ade80]',
-                          state === 'running' && 'animate-pulse-dot bg-[#c8f751]',
-                          state === 'pending' && 'bg-[#3a3f47]',
-                        )}
-                      />
-                      <span>
-                        <span className={cn('block text-[13px] font-medium', state === 'pending' ? 'text-[#6b727c]' : 'text-[#f2f4f5]')}>
-                          {s.title}
-                        </span>
-                        <span className="font-mono-ui block text-[11px] text-[#6b727c]">{s.detail}</span>
+                {timeline.map((s) => (
+                  <li key={s.id} className="flex items-start gap-2.5 rounded-[10px] border border-[#24272d] bg-[#141619] px-3 py-2.5">
+                    <span
+                      className={cn(
+                        'mt-1.5 h-2 w-2 shrink-0 rounded-full',
+                        s.state === 'done' && 'bg-[#4ade80]',
+                        s.state === 'running' && 'animate-pulse-dot bg-[#c8f751]',
+                        s.state === 'failed' && 'bg-[#f87171]',
+                        s.state === 'pending' && 'bg-[#3a3f47]',
+                      )}
+                    />
+                    <span className="min-w-0">
+                      <span className={cn('block text-[13px] font-medium', s.state === 'pending' ? 'text-[#6b727c]' : 'text-[#f2f4f5]')}>
+                        {s.title}
                       </span>
-                    </li>
-                  );
-                })}
+                      <span className="font-mono-ui block truncate text-[11px] text-[#6b727c]">{s.detail}</span>
+                    </span>
+                  </li>
+                ))}
               </ol>
+
+              {errorText && (
+                <div className="mt-4 flex items-start gap-3 rounded-[10px] border border-[#f87171]/40 bg-[rgba(248,113,113,0.06)] px-3.5 py-3">
+                  <AlertTriangle size={16} className="mt-0.5 shrink-0 text-[#f87171]" />
+                  <p className="text-[13px] leading-[1.6] text-[#f2f4f5]">{errorText}</p>
+                </div>
+              )}
+
+              {project && (
+                <div className="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-[10px] border border-[#24272d] bg-[#141619] px-3.5 py-3">
+                  <span className="font-mono-ui text-[12px] text-[#a0a6af]">
+                    项目 #{project.id} · v{project.latest_version}
+                    {quota ? ` · 本周期额度 ${quota.used}/${quota.limit}` : ''}
+                  </span>
+                  <Link
+                    to={`/projects/${project.id}`}
+                    className="focus-ring inline-flex items-center gap-1.5 rounded-[6px] text-[13px] text-[#c8f751] transition-colors hover:underline"
+                  >
+                    查看项目详情
+                    <ArrowRight size={13} />
+                  </Link>
+                </div>
+              )}
             </div>
 
             {/* Preview window */}
@@ -198,14 +267,18 @@ export default function Index() {
                   <span className="h-2.5 w-2.5 rounded-full bg-[#3a3f47]" />
                   <span className="h-2.5 w-2.5 rounded-full bg-[#3a3f47]" />
                   <span className="h-2.5 w-2.5 rounded-full bg-[#3a3f47]" />
-                  <span className="font-mono-ui ml-2 truncate text-[11px] text-[#6b727c]">{result.appName}.atoms.app</span>
+                  <span className="font-mono-ui ml-2 truncate text-[11px] text-[#6b727c]">
+                    {spec?.app_name ?? 'app'}.atoms.app
+                  </span>
                   <span
                     className={cn(
                       'font-mono-ui ml-auto rounded-[6px] px-2 py-0.5 text-[10px] uppercase tracking-[0.12em]',
-                      phase === 'done' ? 'bg-[rgba(74,222,128,0.14)] text-[#4ade80]' : 'bg-[rgba(200,247,81,0.12)] text-[#c8f751]',
+                      phase === 'done' && 'bg-[rgba(74,222,128,0.14)] text-[#4ade80]',
+                      phase === 'failed' && 'bg-[rgba(248,113,113,0.14)] text-[#f87171]',
+                      (phase === 'running' || phase === 'idle') && 'bg-[rgba(200,247,81,0.12)] text-[#c8f751]',
                     )}
                   >
-                    {phase === 'running' ? 'building' : phase === 'done' ? 'live' : 'ready'}
+                    {phase === 'running' ? 'building' : phase === 'done' ? 'live' : phase === 'failed' ? 'broken' : 'ready'}
                   </span>
                 </div>
                 <div className="relative min-h-[300px]">
@@ -213,19 +286,24 @@ export default function Index() {
                     <div className="flex min-h-[300px] flex-col items-center justify-center gap-3 px-6 text-center">
                       <Loader2 size={22} className="animate-spin text-[#c8f751]" />
                       <p className="font-mono-ui text-[12px] text-[#a0a6af]">
-                        {BUILD_STEPS[Math.min(stepIndex, BUILD_STEPS.length - 1)]?.title}
+                        {activeStage?.stage_name ?? '等待执行'}
                         <span className="animate-caret">_</span>
                       </p>
+                    </div>
+                  ) : phase === 'failed' ? (
+                    <div className="flex min-h-[300px] flex-col items-center justify-center gap-3 px-6 text-center">
+                      <AlertTriangle size={22} className="text-[#f87171]" />
+                      <p className="font-mono-ui text-[12px] text-[#a0a6af]">生成中断，可在项目详情页重试</p>
                     </div>
                   ) : (
                     <MiniApp kind={previewKind} />
                   )}
                 </div>
-                {phase === 'done' && (
+                {phase === 'done' && testReport.length > 0 && (
                   <div className="border-t border-[#24272d] bg-[#141619] px-3 py-2.5">
                     <p className="font-mono-ui text-[10px] uppercase tracking-[0.14em] text-[#6b727c]">test report</p>
                     <ul className="mt-2 grid grid-cols-3 gap-2">
-                      {TEST_RESULTS.map((r) => (
+                      {testReport.map((r) => (
                         <li key={r.id} className="rounded-[8px] border border-[#24272d] bg-[#0f1113] px-2.5 py-2">
                           <p className="text-[11px] text-[#6b727c]">{r.label}</p>
                           <p className={cn('font-mono-ui mt-0.5 text-[13px] font-semibold', r.passed ? 'text-[#4ade80]' : 'text-[#f87171]')}>
@@ -237,7 +315,7 @@ export default function Index() {
                   </div>
                 )}
                 <div className="flex flex-wrap items-center gap-2 border-t border-[#24272d] bg-[#141619] px-3 py-2.5">
-                  {result.stack.map((s) => (
+                  {(spec?.stack ?? PROMPT_PRESETS[0].stack).map((s) => (
                     <span key={s} className="font-mono-ui rounded-[6px] border border-[#24272d] px-2 py-0.5 text-[10px] text-[#a0a6af]">
                       {s}
                     </span>
@@ -409,9 +487,6 @@ export default function Index() {
               </Link>
               <Link to="/changelog" className="transition-colors hover:text-[#f2f4f5]">
                 更新日志
-              </Link>
-              <Link to="/signin" className="transition-colors hover:text-[#f2f4f5]">
-                登录
               </Link>
             </div>
           </div>
