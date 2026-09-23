@@ -39,12 +39,19 @@ export function useAuthStatus() {
     refresh();
   }, [refresh]);
 
+  /**
+   * 发起登录。Atoms 账号不支持独立的注册接口（登录页内含注册入口），
+   * 因此未登录用户统一进入平台账号页，由平台页面区分注册与登录。
+   */
   const login = useCallback(() => {
     client.auth.toLogin();
   }, []);
 
-  const logout = useCallback(() => {
-    client.auth.logout();
+  /** 登出：SDK 会清除本地令牌并跳回首页，先本地复位避免顶栏残留登录态。 */
+  const logout = useCallback(async () => {
+    setUser(null);
+    setState('anonymous');
+    await client.auth.logout();
   }, []);
 
   return { state, user, login, logout, refresh };

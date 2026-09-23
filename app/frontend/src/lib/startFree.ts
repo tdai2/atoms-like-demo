@@ -1,12 +1,15 @@
 /**
  * 「免费开始」入口的跨页面意图。
  *
- * 登录会离开当前页面（由平台登录页与 /auth/callback 接管），落点不由本应用决定，
+ * 登录会离开当前页面（由平台账号页与 /auth/callback 接管），落点不由本应用决定，
  * 因此点击时先把意图写入 sessionStorage，等账号态解析为已登录后再消费：
  * 回到首页需求输入区并聚焦输入框，让用户可以直接开始生成。
  */
 
 const INTENT_KEY = 'atoms:start-free-intent';
+
+/** 入口来源：未登录时进入注册流程，已登录时回到需求输入区。 */
+export type StartFreeIntent = 'register' | 'console';
 
 type FocusListener = () => void;
 
@@ -21,9 +24,9 @@ function safeSession(): Storage | null {
   }
 }
 
-export function markStartFreeIntent(): void {
+export function markStartFreeIntent(kind: StartFreeIntent = 'console'): void {
   try {
-    safeSession()?.setItem(INTENT_KEY, '1');
+    safeSession()?.setItem(INTENT_KEY, kind);
   } catch {
     // 忽略：无法持久化意图时仍允许后续交互。
   }
@@ -31,7 +34,7 @@ export function markStartFreeIntent(): void {
 
 export function peekStartFreeIntent(): boolean {
   try {
-    return safeSession()?.getItem(INTENT_KEY) === '1';
+    return Boolean(safeSession()?.getItem(INTENT_KEY));
   } catch {
     return false;
   }

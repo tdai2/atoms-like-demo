@@ -121,3 +121,91 @@
 2026-09-22 23:53:58,431 - dependencies.auth - DEBUG - Authentication required for request GET /api/v1/auth/me
 2026-09-22 23:53:58,435 - dependencies.auth - DEBUG - Authentication required for request GET /api/v1/auth/me
 2026-09-22 23:53:58,438 - dependencies.auth - DEBUG - Authentication required for request GET /api/v1/auth/me
+2026-09-22 23:55:08,150 - main - INFO - === Logging system initialized ===
+2026-09-22 23:55:08,150 - main - INFO - Log file: logs/app_20260922.log
+2026-09-22 23:55:08,150 - main - INFO - Log level: DEBUG
+2026-09-22 23:55:08,150 - main - INFO - Log date: 20260922
+2026-09-22 23:55:08,259 - main - INFO - Included router: routers.aihub.router
+2026-09-22 23:55:08,988 - main - INFO - Included router: routers.auth.router
+2026-09-22 23:55:09,100 - main - INFO - Included router: routers.build_tasks.router
+2026-09-22 23:55:09,133 - main - INFO - Included router: routers.generation.router
+2026-09-22 23:55:09,136 - main - INFO - Included router: routers.health.router
+2026-09-22 23:55:09,163 - main - INFO - Included router: routers.project_versions.router
+2026-09-22 23:55:09,186 - main - INFO - Included router: routers.projects.router
+2026-09-22 23:55:09,195 - main - INFO - Included router: routers.settings.router
+2026-09-22 23:55:09,217 - main - INFO - Included router: routers.storage.router
+2026-09-22 23:55:09,241 - main - INFO - Included router: routers.usage_quotas.router
+2026-09-22 23:55:09,255 - main - INFO - Included router: routers.user.router
+2026-09-22 23:55:09,257 - main - INFO - === Application startup initiated ===
+2026-09-22 23:55:09,257 - main - INFO - === Application startup completed successfully ===
+2026-09-22 23:56:23,472 - main - INFO - === Logging system initialized ===
+2026-09-22 23:56:23,472 - main - INFO - Log file: logs/app_20260922.log
+2026-09-22 23:56:23,472 - main - INFO - Log level: DEBUG
+2026-09-22 23:56:23,472 - main - INFO - Log date: 20260922
+2026-09-22 23:56:23,580 - main - INFO - Included router: routers.aihub.router
+2026-09-22 23:56:24,425 - main - INFO - Included router: routers.auth.router
+2026-09-22 23:56:24,596 - main - INFO - Included router: routers.build_tasks.router
+2026-09-22 23:56:24,676 - main - INFO - Included router: routers.generation.router
+2026-09-22 23:56:24,681 - main - INFO - Included router: routers.health.router
+2026-09-22 23:56:24,752 - main - INFO - Included router: routers.project_versions.router
+2026-09-22 23:56:24,778 - main - INFO - Included router: routers.projects.router
+2026-09-22 23:56:24,790 - main - INFO - Included router: routers.settings.router
+2026-09-22 23:56:24,865 - main - INFO - Included router: routers.storage.router
+2026-09-22 23:56:24,903 - main - INFO - Included router: routers.usage_quotas.router
+2026-09-22 23:56:24,963 - main - INFO - Included router: routers.user.router
+2026-09-22 23:56:24,964 - main - INFO - === Application startup initiated ===
+2026-09-22 23:56:24,964 - main - INFO - === Application startup completed successfully ===
+2026-09-22 23:56:26,649 - dependencies.auth - DEBUG - Authentication required for request GET /api/v1/auth/me
+2026-09-22 23:56:26,654 - dependencies.auth - DEBUG - Authentication required for request GET /api/v1/auth/me
+2026-09-22 23:58:00,373 - dependencies.auth - DEBUG - Authentication required for request GET /api/v1/auth/me
+2026-09-22 23:58:00,378 - dependencies.auth - DEBUG - Authentication required for request GET /api/v1/auth/me
+2026-09-22 23:58:00,384 - dependencies.auth - DEBUG - Authentication required for request GET /api/v1/auth/me
+2026-09-22 23:58:00,388 - dependencies.auth - DEBUG - Authentication required for request GET /api/v1/auth/me
+2026-09-22 23:58:00,393 - dependencies.auth - DEBUG - Authentication required for request GET /api/v1/auth/me
+2026-09-22 23:58:07,452 - dependencies.auth - DEBUG - Authentication required for request GET /api/v1/auth/me
+2026-09-22 23:58:07,456 - dependencies.auth - DEBUG - Authentication required for request GET /api/v1/auth/me
+2026-09-22 23:58:07,460 - dependencies.auth - DEBUG - Authentication required for request GET /api/v1/auth/me
+2026-09-22 23:58:07,463 - dependencies.auth - DEBUG - Authentication required for request GET /api/v1/auth/me
+2026-09-22 23:58:07,469 - dependencies.auth - DEBUG - Authentication required for request GET /api/v1/auth/me
+2026-09-22 23:58:08,970 - dependencies.auth - DEBUG - Authentication required for request GET /api/v1/auth/me
+2026-09-22 23:58:08,975 - dependencies.auth - DEBUG - Authentication required for request GET /api/v1/auth/me
+2026-09-22 23:58:08,978 - dependencies.auth - DEBUG - Authentication required for request GET /api/v1/auth/me
+2026-09-22 23:58:08,981 - dependencies.auth - DEBUG - Authentication required for request GET /api/v1/auth/me
+2026-09-22 23:58:08,985 - dependencies.auth - DEBUG - Authentication required for request GET /api/v1/auth/me
+2026-09-22 23:58:17,216 - dependencies.auth - DEBUG - Authentication required for request GET /api/v1/auth/me
+2026-09-22 23:58:17,221 - dependencies.auth - DEBUG - Authentication required for request GET /api/v1/auth/me
+2026-09-22 23:58:17,225 - dependencies.auth - DEBUG - Authentication required for request GET /api/v1/auth/me
+2026-09-22 23:58:17,227 - dependencies.auth - DEBUG - Authentication required for request GET /api/v1/auth/me
+2026-09-22 23:58:17,705 - dependencies.auth - DEBUG - Authentication required for request GET /api/v1/auth/me
+2026-09-22 23:58:17,708 - dependencies.auth - DEBUG - Authentication required for request GET /api/v1/auth/me
+2026-09-22 23:58:17,713 - dependencies.auth - DEBUG - Authentication required for request GET /api/v1/auth/me
+2026-09-22 23:58:17,716 - dependencies.auth - DEBUG - Authentication required for request GET /api/v1/auth/me
+2026-09-22 23:58:26,822 - dependencies.auth - DEBUG - Authentication required for request GET /api/v1/auth/me
+2026-09-22 23:58:26,831 - dependencies.auth - DEBUG - Authentication required for request GET /api/v1/auth/me
+2026-09-22 23:58:26,837 - dependencies.auth - DEBUG - Authentication required for request GET /api/v1/auth/me
+2026-09-22 23:58:26,842 - dependencies.auth - DEBUG - Authentication required for request GET /api/v1/auth/me
+2026-09-22 23:58:34,576 - dependencies.auth - DEBUG - Authentication required for request GET /api/v1/auth/me
+2026-09-22 23:58:34,582 - dependencies.auth - DEBUG - Authentication required for request GET /api/v1/auth/me
+2026-09-22 23:58:34,585 - dependencies.auth - DEBUG - Authentication required for request GET /api/v1/auth/me
+2026-09-22 23:58:34,588 - dependencies.auth - DEBUG - Authentication required for request GET /api/v1/auth/me
+2026-09-22 23:58:44,303 - dependencies.auth - DEBUG - Authentication required for request GET /api/v1/auth/me
+2026-09-22 23:58:44,314 - dependencies.auth - DEBUG - Authentication required for request GET /api/v1/auth/me
+2026-09-22 23:59:36,367 - dependencies.auth - DEBUG - Authentication required for request GET /api/v1/auth/me
+2026-09-22 23:59:36,371 - dependencies.auth - DEBUG - Authentication required for request GET /api/v1/auth/me
+2026-09-22 23:59:36,374 - dependencies.auth - DEBUG - Authentication required for request GET /api/v1/auth/me
+2026-09-22 23:59:36,377 - dependencies.auth - DEBUG - Authentication required for request GET /api/v1/auth/me
+2026-09-23 00:00:00,160 - dependencies.auth - DEBUG - Authentication required for request GET /api/v1/auth/me
+2026-09-23 00:00:00,165 - dependencies.auth - DEBUG - Authentication required for request GET /api/v1/auth/me
+2026-09-23 00:00:00,173 - dependencies.auth - DEBUG - Authentication required for request GET /api/v1/auth/me
+2026-09-23 00:00:00,178 - dependencies.auth - DEBUG - Authentication required for request GET /api/v1/auth/me
+2026-09-23 00:00:03,816 - dependencies.auth - DEBUG - Authentication required for request GET /api/v1/auth/me
+2026-09-23 00:00:03,820 - dependencies.auth - DEBUG - Authentication required for request GET /api/v1/auth/me
+2026-09-23 00:00:03,825 - dependencies.auth - DEBUG - Authentication required for request GET /api/v1/auth/me
+2026-09-23 00:00:03,829 - dependencies.auth - DEBUG - Authentication required for request GET /api/v1/auth/me
+2026-09-23 00:00:07,354 - dependencies.auth - DEBUG - Authentication required for request GET /api/v1/auth/me
+2026-09-23 00:00:07,362 - dependencies.auth - DEBUG - Authentication required for request GET /api/v1/auth/me
+2026-09-23 00:00:07,370 - dependencies.auth - DEBUG - Authentication required for request GET /api/v1/auth/me
+2026-09-23 00:00:33,531 - dependencies.auth - DEBUG - Authentication required for request GET /api/v1/auth/me
+2026-09-23 00:00:33,534 - dependencies.auth - DEBUG - Authentication required for request GET /api/v1/auth/me
+2026-09-23 00:00:33,537 - dependencies.auth - DEBUG - Authentication required for request GET /api/v1/auth/me
+2026-09-23 00:00:33,539 - dependencies.auth - DEBUG - Authentication required for request GET /api/v1/auth/me
