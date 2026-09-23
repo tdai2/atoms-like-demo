@@ -1,0 +1,36 @@
+{
+    "title": "project_versions",
+    "description": "项目版本链，记录每一轮生成或修改产生的产物引用",
+    "type": "object",
+    "properties": {
+        "id": {
+            "type": "integer",
+            "description": "自增主键"
+        },
+        "user_id": {
+            "type": "string",
+            "description": "所属用户标识，由系统维护"
+        },
+        "project_id": {
+            "type": "integer",
+            "description": "所属项目 id"
+        },
+        "version": {
+            "type": "integer",
+            "description": "版本号，从 1 开始递增"
+        },
+        "diff_summary": {
+            "type": "string",
+            "description": "本版本相对上一版本改动的可读说明"
+        },
+        "files_key": {
+            "type": "string",
+            "description": "产物在对象存储中的前缀键，产物不入库"
+        }
+    },
+    "required": [
+        "project_id",
+        "version",
+        "user_id"
+    ]
+}

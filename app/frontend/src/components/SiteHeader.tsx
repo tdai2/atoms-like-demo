@@ -6,6 +6,7 @@ const NAV = [
   { label: '产品能力', href: '/#capabilities' },
   { label: '模板库', href: '/#templates' },
   { label: '定价', href: '/#pricing' },
+  { label: '我的项目', to: '/projects' },
   { label: '文档', to: '/docs' },
   { label: '更新日志', to: '/changelog' },
 ];

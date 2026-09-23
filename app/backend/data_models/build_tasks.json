@@ -1,0 +1,57 @@
+{
+    "title": "build_tasks",
+    "description": "生成流水线的阶段状态，一个项目一次生成产生六条记录，逐阶段落库以驱动前端时间线",
+    "type": "object",
+    "properties": {
+        "id": {
+            "type": "integer",
+            "description": "自增主键"
+        },
+        "user_id": {
+            "type": "string",
+            "description": "所属用户标识，由系统维护"
+        },
+        "project_id": {
+            "type": "integer",
+            "description": "所属项目 id"
+        },
+        "run_no": {
+            "type": "integer",
+            "description": "同一次生成的批次号，从 1 开始，重试时递增"
+        },
+        "stage": {
+            "type": "string",
+            "description": "阶段标识，如 parsing / planning / coding / building / testing / deploying"
+        },
+        "stage_name": {
+            "type": "string",
+            "description": "阶段中文名，如 解析需求、生成方案、编写代码、构建校验、测试验证、发布预览"
+        },
+        "stage_order": {
+            "type": "integer",
+            "description": "阶段序号，从 1 到 6，用于稳定排序"
+        },
+        "stage_state": {
+            "type": "string",
+            "description": "阶段状态，取值为 pending / running / done / failed"
+        },
+        "stage_log": {
+            "type": "string",
+            "description": "该阶段的执行日志，逐行追加"
+        },
+        "error_message": {
+            "type": "string",
+            "description": "失败原因，成功时为空字符串"
+        },
+        "output_summary": {
+            "type": "string",
+            "description": "该阶段产出的可读摘要，展示在时间线上"
+        }
+    },
+    "required": [
+        "project_id",
+        "stage",
+        "stage_state",
+        "user_id"
+    ]
+}

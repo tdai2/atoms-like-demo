@@ -85,16 +85,17 @@
 | 静态数据 | 预设提示词、构建步骤、模板、能力、定价 | `src/data/site.ts` |
 | 设计系统 | 颜色、字体、网格背景、动效 | `src/index.css` `DESIGN.md` |
 
-### 2.2 后端模块（待接入）
+### 2.2 后端模块（阶段二已落地）
 
 | 模块 | 职责 | 对外接口 |
 |------|------|---------|
-| 鉴权 | 注册、登录、会话校验 | 复用 Atoms 内置账号体系，不自建 |
-| 项目管理 | 项目增删改查、版本列表与回溯 | `GET/POST /projects`、`GET /projects/{id}/versions` |
-| 生成编排 | 创建生成任务、推进阶段、写入状态 | `POST /generate`、`GET /tasks/{id}` |
-| AI 网关 | 封装模型调用、提示词模板、结果校验 | 内部模块，不直接暴露 |
-| 产物存储 | 生成文件的读写与预览资源托管 | 对象存储读写封装 |
-| 配额 | 按套餐校验与计数 | 作为生成接口的前置中间件 |
+| 鉴权 | 会话校验与用户身份解析 | 复用 Atoms 内置账号体系（`dependencies/auth.py`），不自建 |
+| 项目管理 | 项目增删改查、版本列表与回溯 | `GET/POST /api/v1/generation/projects`、`/projects/{id}/versions`、`DELETE /projects/{id}` |
+| 生成编排 | 创建生成任务、推进阶段、写入状态 | `POST /api/v1/generation/projects`、`GET /api/v1/generation/projects/{id}`、`POST /projects/{id}/retry` |
+| 方案推导 | 由需求文本推导页面、实体与技术栈 | `GET /api/v1/generation/templates/{key}`；阶段三替换为 AI 网关 |
+| 实体 CRUD | 四张表的自动生成路由，均按用户隔离 | `/api/v1/entities/{projects,build_tasks,project_versions,usage_quotas}` |
+| 产物存储 | 生成文件的读写与预览资源托管 | 阶段三接入；当前版本记录只保存对象存储引用键 |
+| 配额 | 按套餐校验与计数 | `services/generation.py` 的 `get_or_create_quota`，创建任务前校验并扣减 |
 
 ### 2.3 模块依赖方向
 
@@ -150,7 +151,7 @@
 | 阶段 | 范围 | 交付标志                      |
 |------|------|---------------------------|
 | 一（已完成） | 纯前端演示：输入台、时间线、预览窗、模板库、定价 | 三十秒内理解产品主张                |
-| 二（当前阶段） | 激活后端，落地账号、项目表、生成接口 | 登录后能看到自己的项目列表             |
+| 二（已完成） | 激活后端，落地账号、项目表、生成接口 | 登录后能看到自己的项目列表             |
 | 三 | 接入真实模型生成，替换预设匹配 | 输入任意需求产出可访问链接             |
 | 四 | 对话式增量修改、版本回溯 | 追加需求只改动对应部分               |
 | 五 | 测试用例生成、执行与结果记录 | 可以自动或手动生成测试用例，执行并查询历史测试记录 |
@@ -170,12 +171,28 @@
 
 验证方式：`pnpm run lint` 与 `pnpm run build` 均通过；首页与 `/blog/` 完成预渲染。
 
-### 迁移要点
+### 阶段二交付清单
 
-接入后端时，前端改动集中在三处，不触碰导航与布局结构：
+| 交付项 | 落地位置 |
+|--------|---------|
+| 数据表：项目、六阶段任务、版本链、按周期配额 | `projects`、`build_tasks`、`project_versions`、`usage_quotas` |
+| 生成编排服务：方案推导、阶段推进、配额扣减、失败与重试 | `app/backend/services/generation.py` |
+| 生成自定义接口（创建 / 列表 / 详情 / 重试 / 删除 / 版本 / 模板方案） | `app/backend/routers/generation.py` |
+| 前端接口层与数据 Hook（查询、轮询、创建、重试、删除） | `app/frontend/src/lib/projects.ts`、`src/hooks/useProjects.ts` |
+| Atoms 账号三态接入与真实登录入口 | `src/hooks/useAuthStatus.ts`、`src/pages/SignIn.tsx` |
+| 我的项目列表页（加载 / 未登录 / 空列表 / 失败重试 / 成功列表） | `src/pages/Projects.tsx` |
+| 项目详情页（流水线快照、方案、测试报告、失败重试） | `src/pages/ProjectDetail.tsx` |
+| 首页生成链路改为创建任务 + 轮询服务端阶段状态 | `src/pages/Index.tsx` |
 
-1. `Index.tsx` 中 `run()` 的定时状态机替换为创建任务 + 轮询任务状态。
-2. `PROMPT_PRESETS` 的预设匹配替换为服务端返回的项目元数据。
-3. 预览窗由 `MiniApp` 组件切换为加载真实部署地址的 iframe。
+验证方式：后端 Python 语法检查通过；`pnpm run lint` 与 `pnpm run build` 通过。
 
-占位页按路由逐个替换为真实页面，导航结构保持不变。
+阶段二不产出真实部署地址：`projects.preview_url` 保持为空，预览窗仍由 `MiniApp` 组件渲染，避免出现假的可访问链接。
+
+### 阶段三迁移要点
+
+1. `services/generation.py` 中基于关键词的 `build_spec` 与 `stage_output` 替换为 AI 调用（方案与代码生成用 `claude-opus-5`，需求解析用 `deepseek-v4-flash`）。
+2. 阶段推进由「按创建时间推导」改为真实执行结果驱动，`build_tasks` 的状态契约保持不变。
+3. `projects.preview_url` 写入真实部署地址，预览窗由 `MiniApp` 组件切换为 iframe。
+4. 产物写入对象存储，`project_versions.files_key` 指向真实产物。
+
+生成接口与配额校验的契约不变，前端无需改动调用方式。
