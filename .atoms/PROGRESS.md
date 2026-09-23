@@ -39,4 +39,5 @@ last_updated: 2026-09-22T07:20:00Z
 - 2026-09-22 对齐 `docs/plan.md` 六阶段流水线：新增「测试验证」步骤与生成完成后的测试报告面板。
 - 2026-09-22 `pnpm run lint && pnpm run build` 通过（退出码 0）。
 - 2026-09-22 同步文档至阶段一交付状态：`docs/mission.md` 范围表、`docs/plan.md` 实施计划与阶段一交付清单、根 `README.md` 与 `app/frontend/README.md`。
+- 2026-09-22 在 `docs/plan.md` 增加项目变更日志功能范围：`change_logs` 数据模型、查询接口、后端模块、关键决策与阶段四范围。
 - 待办：阶段二起激活 Atoms Cloud 后端，落地账号、项目表与生成接口。
