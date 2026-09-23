@@ -70,6 +70,7 @@ last_updated: 2026-09-22T07:20:00Z
 
 ## Progress Log
 
+- 2026-09-23 只读持久化审计（未改代码、未构建）：`users` 1 行（`1606800`），`projects`／`build_tasks`／`project_versions` 均为 0 行，`usage_quotas` 2 行（`1606800` 已用 1，`verify-stage3-user` 已用 0）；四张表均有 `user_id` 索引且无孤立任务／版本、无用户归属错配。对象存储 bucket `generation-artifacts` 残留 3 个对象：空键占位、`projects/2/v1/index.html`（12292 B，2026-09-23T07:47:06Z）、`verify/stage3/healthcheck.html`（239 B）。结论：当前无任何账户存在已持久化项目；账号 `1606800` 额度已扣 1 但无项目行，与「生成后被删除」一致，且删除接口只清理业务表、未清理对象存储产物，故遗留 `projects/2/...` 孤儿对象；`verify-stage3-user` 的配额行为验证脚本残留、`users` 表中无对应用户。
 - 2026-09-23 阶段三收尾完成：六个阶段由真实 AI 驱动（需求解析 `deepseek-v4-flash`、方案规划与代码编写 `claude-opus-5`），生成的单文件应用上传至对象存储 `generation-artifacts`（键 `projects/{id}/v{n}/index.html`），可访问地址写入 `projects.preview_url`，预览窗改为真实 iframe；数据库只存 `artifact_key`，签名地址即时解析不持久化。
 - 2026-09-23 可靠性加固：配额改为条件原子扣减并在模型失败时退款，阶段执行增加原子抢占与 `600` 秒陈旧阶段回收，AI 与对象存储慢调用前后均不持有数据库事务。
 - 2026-09-23 认证链路回归修复：平台登出回跳地址 `/logout-callback` 此前未注册路由，登出后会落到空白页，现补上该页面并统一为登出后自动返回首页。
