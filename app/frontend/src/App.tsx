@@ -3,6 +3,7 @@ import { TooltipProvider } from '@/components/ui/tooltip';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import BlogRoutes from './blog-routes';
+import StartFreeIntentWatcher from './components/StartFreeIntentWatcher';
 import Index from './pages/Index';
 import AuthCallback from './pages/AuthCallback';
 import AuthError from './pages/AuthError';
@@ -41,6 +42,7 @@ const App = () => (
     <TooltipProvider>
       <Toaster />
       <BrowserRouter>
+        <StartFreeIntentWatcher />
         <AppRoutes />
       </BrowserRouter>
     </TooltipProvider>

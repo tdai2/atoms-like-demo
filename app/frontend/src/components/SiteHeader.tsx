@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Menu, X } from 'lucide-react';
+import { useStartFree } from '@/hooks/useStartFree';
 
 const NAV = [
   { label: '产品能力', href: '/#capabilities' },
@@ -13,6 +14,7 @@ const NAV = [
 
 export default function SiteHeader() {
   const [open, setOpen] = useState(false);
+  const { startFree } = useStartFree();
 
   return (
     <header className="sticky top-0 z-50 border-b border-[#24272d] bg-[rgba(11,12,14,0.72)] backdrop-blur-[12px]">
@@ -45,12 +47,13 @@ export default function SiteHeader() {
           >
             登录
           </Link>
-          <a
-            href="#console"
+          <button
+            type="button"
+            onClick={startFree}
             className="focus-ring rounded-[10px] bg-[#c8f751] px-4 py-2 text-[14px] font-semibold text-[#0b0c0e] transition-colors hover:bg-[#b4e23c]"
           >
             免费开始
-          </a>
+          </button>
         </div>
 
         <button
@@ -77,13 +80,16 @@ export default function SiteHeader() {
                 </a>
               ),
             )}
-            <a
-              href="#console"
-              onClick={() => setOpen(false)}
+            <button
+              type="button"
+              onClick={() => {
+                setOpen(false);
+                startFree();
+              }}
               className="mt-2 rounded-[10px] bg-[#c8f751] px-4 py-2.5 text-center text-[15px] font-semibold text-[#0b0c0e]"
             >
               免费开始
-            </a>
+            </button>
           </div>
         </div>
       )}

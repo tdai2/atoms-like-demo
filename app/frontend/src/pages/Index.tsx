@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowRight, Check, Play, Loader2, AlertTriangle } from 'lucide-react';
 import SiteHeader from '@/components/SiteHeader';
@@ -16,6 +16,7 @@ import { cn } from '@/lib/utils';
 import { useAuthStatus } from '@/hooks/useAuthStatus';
 import { useCreateProject, useProjectPipeline } from '@/hooks/useProjects';
 import { apiErrorMessage, type StageState } from '@/lib/projects';
+import { consumeStartFreeIntent, onStartFreeFocus, peekStartFreeIntent } from '@/lib/startFree';
 
 /** 依据服务端方案（页面与实体）决定预览窗渲染哪种迷你应用。 */
 function pickKind(prompt: string, pages: string[], entities: string[]): MiniAppKind {
@@ -69,10 +70,34 @@ export default function Index() {
   const [input, setInput] = useState('');
   const [projectId, setProjectId] = useState<number | null>(null);
   const [category, setCategory] = useState<(typeof TEMPLATE_CATEGORIES)[number]>('全部');
+  const promptRef = useRef<HTMLTextAreaElement>(null);
 
   const { state: authState, login } = useAuthStatus();
   const create = useCreateProject();
   const pipeline = useProjectPipeline(projectId, true);
+
+  // 滚动到需求输入区并聚焦，供「免费开始」入口与意图监听复用。
+  useEffect(() => {
+    const focusPrompt = () => {
+      const section = document.getElementById('console');
+      const smooth = !window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      section?.scrollIntoView({ behavior: smooth ? 'smooth' : 'auto', block: 'start' });
+      promptRef.current?.focus({ preventScroll: true });
+    };
+    return onStartFreeFocus(focusPrompt);
+  }, []);
+
+  // 入口点击时登录会离开本页，回到首页后在这里消费意图，直接落到输入区。
+  useEffect(() => {
+    if (authState !== 'authenticated' || !peekStartFreeIntent()) return;
+    consumeStartFreeIntent();
+    // 等布局稳定后再滚动，避免与浏览器恢复的滚动位置相互覆盖。
+    const timer = window.setTimeout(() => {
+      document.getElementById('console')?.scrollIntoView({ block: 'start' });
+      promptRef.current?.focus({ preventScroll: true });
+    }, 80);
+    return () => window.clearTimeout(timer);
+  }, [authState]);
 
   const project = pipeline.data?.project;
   const stages = pipeline.data?.stages ?? [];
@@ -150,6 +175,7 @@ export default function Index() {
                 </label>
                 <textarea
                   id="prompt"
+                  ref={promptRef}
                   value={input}
                   onChange={(e) => setInput(e.target.value)}
                   onKeyDown={(e) => {

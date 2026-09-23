@@ -49,6 +49,8 @@ last_updated: 2026-09-22T07:20:00Z
 | V2-3 | 界面渲染验证 | Alex | done | V2-2 |
 | P2-10 | 统一前端认证上下文：`AuthContext` 与 `useAuthStatus` 同源 `client.auth.*`，隔离遗留 Axios 链路 | Alex | done | P2-9 |
 | P2-11 | 文档同步：前端 README、`.wiki.md`、根 README 更新至阶段二状态 | Alex | done | P2-10 |
+| P2-12 | 「免费开始」入口接通真实链路：未登录先登录、登录后回到首页需求输入区并聚焦 | Alex | done | P2-11 |
+| V2-4 | Lint、生产构建与界面渲染验证（免费开始入口改动后） | Alex | done | P2-12 |
 
 ## Progress Log
 
@@ -72,3 +74,6 @@ last_updated: 2026-09-22T07:20:00Z
 - 2026-09-22 接口层复用：页面直接使用 `useAuthStatus` 与 `useProjects`，认证与项目查询共用同一 SDK 客户端实例 `src/lib/api.ts`。
 - 2026-09-22 文档同步至阶段二：`app/frontend/README.md` 重写为阶段二状态（路由表、关键文件、生成链路、后续阶段），`.wiki.md` 更新模块清单、目录树、技术栈与使用说明。
 - 2026-09-22 界面渲染验证通过（渲染检查无错误，风格与产品定位一致），阶段二交付完成。
+- 2026-09-22 「免费开始」入口由失效的首页锚点改为真实链路：新增 `lib/startFree.ts`（跨页面意图）、`hooks/useStartFree.ts`（三态与登录判断）、`components/StartFreeIntentWatcher.tsx`（路由级兜底消费），未登录先进入登录页，登录后回到首页需求输入区并聚焦。
+- 2026-09-22 免费额度侧未改动：每账号按自然月自动创建 20 次配额，跨月重置，额度用尽返回明确提示。
+- 2026-09-22 `pnpm run lint && pnpm run build` 通过（退出码 0），界面渲染检查通过。
