@@ -86,6 +86,10 @@ last_updated: 2026-09-22T07:20:00Z
 
 - 2026-09-23 删除首页页脚角落与账号状态无关的硬编码「登录」入口（已登录时仍显示登录）；登出链路加固：后端 `/api/v1/auth/logout` 支持 GET/POST 且地址构造失败时降级不再抛 500，前端 `useAuthStatus.logout()` 在平台登出接口异常时兜底回到首页。
 
+- 2026-09-23 **502 根因定位并修复**：`/api/v1/generation/projects` 的 502 并非模型调用内联所致（创建接口此前已改为仅落库），真实链路是「阶段执行在整个慢调用期间持有数据库连接 + 无服务器连接池只有 1 条」。`services/generation.py` 已把阶段执行拆为三段独立短事务：`_claim_next_stage`（短事务原子抢占并复制只读输入快照）→ `_run_stage_work`（模型/对象存储慢调用，全程不持有连接）→ `_finish_stage` / `_abort_stage`（短事务回写结果或失败，且仅在阶段仍为 `running` 时才写，避免覆盖已被回收的状态）。`core/database.py` 无服务器分支的连接池由 `pool_size=1 / max_overflow=0 / pool_timeout=5s` 调整为 `pool_size=5 / max_overflow=5 / pool_timeout=30s`（均可由 `DB_POOL_SIZE`、`DB_MAX_OVERFLOW`、`DB_POOL_TIMEOUT` 覆盖）。`routers/generation.py` 三个写接口改为在等待工作器前归还请求连接，并用 `_snapshot_with_quota` 独立短会话读取最新快照与额度。
+- 2026-09-23 网关级回归通过（`verify_gateway_timeout.py`）：创建 `201 / 2.90s`，轮询 `200 / 1.0~4.2s`，4 路并发轮询全部 `200`（`1.40s`），最慢请求 `4.12s`，远低于 `25s` 安全线与 Cloudflare 约 `100s` 时限；创建后项目确实落库、无 `5xx`、无 `QueuePool` 超时。
+- 2026-09-23 同次回归中 AI 钱包仍为余额不足（`insufficient_ai_balance`，HTTP `403`）：阶段 `parsing` 落为可见失败，残留项目 `0`、`FINAL quota used: 0`，再次确认外部模型不可用时用户额度不被白扣、也不留半成品项目。六阶段完整端到端复跑仍需待额度恢复后进行。
+- 2026-09-23 **生产启动隐患确认**：`app/start_app_v2.sh:871` 的后端启动命令仍带 `--reload`（本地开发用）。`--reload` 会在文件变更时重启工作进程，重启窗口内无上游、进程内后台工作器也会被中断，是生产环境 502 的另一个来源；生产部署需改用不带 `--reload` 的启动命令。
 - 2026-09-22 认证入口改造：新增 `/signup` 注册入口页（`src/pages/SignUp.tsx`），未登录点击「免费开始」改为进入注册页；顶栏按账号态切换，已登录显示账号邮箱与「退出登录」按钮（调用 `client.auth.logout()`），未登录显示「登录 + 免费开始」。
 - 2026-09-22 完成前端模板初始化与暗色工程风设计系统（tokens、网格背景、焦点环、reduced-motion）。
 - 2026-09-22 完成首屏 Prompt Console、预设提示胶囊与关键词匹配预设方案逻辑。

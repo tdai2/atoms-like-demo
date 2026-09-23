@@ -3,8 +3,8 @@
 前缀 `/api/v1/generation`，与自动生成的实体 CRUD 路由（`/api/v1/entities/*`）区分开，
 由本模块承担「创建任务 + 逐阶段执行 + 配额校验」的编排语义。
 
-前端统一通过 web-sdk `client.apiCall.invoke` 调用；每次详情查询推进一个阶段，
-因此前端需要按 `timeout: 600_000` 轮询（单阶段可能包含模型调用与对象存储读写）。
+前端统一通过 web-sdk `client.apiCall.invoke` 调用；所有接口都只做数据库读写与预览地址解析，
+阶段执行交给后台工作器（`services.pipeline_runner`），因此轮询不会被模型调用拖到网关超时。
 """
 
 import logging
@@ -15,13 +15,13 @@ from pydantic import BaseModel, Field
 from sqlalchemy import delete as sql_delete, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from core.database import get_db
+from core.database import db_manager, get_db
 from dependencies.auth import get_current_user
 from models.build_tasks import Build_tasks
 from models.project_versions import Project_versions
 from models.projects import Projects
 from schemas.auth import UserResponse
-from services import generation
+from services import generation, pipeline_runner
 from services.generation import (
     ProjectNotFound,
     QuotaExceeded,
@@ -180,6 +180,22 @@ def _pipeline_response(snapshot: Dict[str, Any], quota) -> PipelineResponse:
     )
 
 
+async def _snapshot_with_quota(user_id: str, project_id: int) -> PipelineResponse:
+    """用独立短会话读取最新快照与额度。
+
+    请求会话在等待后台工作器期间必须归还数据库连接，否则后台阶段与多端并发轮询会互相
+    争抢连接池，表现为 `QueuePool limit ... timed out` 引起的 5xx（经网关放大为 502）。
+    因此快照统一在这里用短会话重新读取，保证返回的是最新状态。
+    """
+    try:
+        async with db_manager.session() as reader:
+            snapshot = await sync_pipeline(reader, user_id, project_id)
+            quota = await get_or_create_quota(reader, user_id)
+    except ProjectNotFound:
+        raise HTTPException(status_code=404, detail="项目不存在或无权访问")
+    return _pipeline_response(snapshot, quota)
+
+
 async def _load_project(db: AsyncSession, user_id: str, project_id: int) -> Projects:
     project = await db.scalar(select(Projects).where(Projects.id == project_id, Projects.user_id == user_id))
     if project is None:
@@ -193,22 +209,27 @@ async def create_generation_project(
     current_user: UserResponse = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
-    """创建生成任务：模型解析需求后落库项目与六阶段任务，并占用一次生成额度。"""
+    """创建生成任务：落库项目与六阶段任务并占用一次额度。
+
+    本接口不执行模型调用，返回的是待执行快照（首个阶段为 pending），
+    六个阶段由后台工作器逐个推进，避免创建请求被上游模型拖到网关超时。
+    """
     prompt = (data.prompt or "").strip()
     if not prompt:
         raise HTTPException(status_code=400, detail="请先描述你想要的应用")
     try:
-        project, quota = await create_project(db, str(current_user.id), prompt, data.template_key or "")
+        project, _quota = await create_project(db, str(current_user.id), prompt, data.template_key or "")
     except QuotaExceeded as exc:
         raise HTTPException(
             status_code=429,
             detail=f"本周期生成额度已用尽（{exc.used}/{exc.limit}），升级套餐后可继续生成",
         )
-    except Exception as exc:  # noqa: BLE001 - 模型不可用时给出可重试的错误
+    except Exception as exc:  # noqa: BLE001 - 落库失败时给出可重试的错误
         logger.error("create project failed: %s", exc)
-        raise HTTPException(status_code=502, detail=f"需求解析失败，请稍后重试：{exc}")
-    snapshot = await sync_pipeline(db, str(current_user.id), project.id)
-    return _pipeline_response(snapshot, quota)
+        raise HTTPException(status_code=500, detail="生成任务创建失败，请稍后重试")
+    user_id = str(current_user.id)
+    # 创建已完成落库，这里用独立短会话读取最新快照：额度可能已被后台退款逻辑改写。
+    return await _snapshot_with_quota(user_id, project.id)
 
 
 @router.get("/projects", response_model=ProjectListResponse)
@@ -240,14 +261,18 @@ async def get_generation_project(
     current_user: UserResponse = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
-    """轮询项目流水线状态：推进一个阶段并返回六阶段快照与测试报告。"""
+    """读取项目流水线快照；项目未完成时确保后台工作器在推进。"""
     user_id = str(current_user.id)
     try:
-        snapshot = await sync_pipeline(db, user_id, project_id)
+        async with db_manager.session() as reader:
+            snapshot = await sync_pipeline(reader, user_id, project_id)
     except ProjectNotFound:
         raise HTTPException(status_code=404, detail="项目不存在或无权访问")
-    quota = await get_or_create_quota(db, user_id)
-    return _pipeline_response(snapshot, quota)
+    if (snapshot["project"].status or "") not in generation.TERMINAL_STATUSES:
+        # 先释放请求连接，再等待工作器起步；工作器阶段执行期间会独立占用连接，
+        # 若此处继续持有连接，并发轮询就会把连接池耗尽并放大为网关 502。
+        await pipeline_runner.kick(user_id, project_id)
+    return await _snapshot_with_quota(user_id, project_id)
 
 
 @router.post("/projects/{project_id}/retry", response_model=PipelineResponse)
@@ -260,11 +285,11 @@ async def retry_generation_project(
     user_id = str(current_user.id)
     try:
         await retry_project(db, user_id, project_id)
-        snapshot = await sync_pipeline(db, user_id, project_id)
     except ProjectNotFound:
         raise HTTPException(status_code=404, detail="项目不存在或无权访问")
-    quota = await get_or_create_quota(db, user_id)
-    return _pipeline_response(snapshot, quota)
+    # 重试已落库并释放连接，随后调度工作器并用短会话读取最新快照。
+    await pipeline_runner.kick(user_id, project_id)
+    return await _snapshot_with_quota(user_id, project_id)
 
 
 @router.get("/projects/{project_id}/versions", response_model=List[VersionView])

@@ -9,6 +9,7 @@
 解析或校验失败时抛 `GenerationAIError`，由编排层记录成可见的阶段失败，而不是伪造成功。
 """
 
+import asyncio
 import json
 import logging
 import re
@@ -22,6 +23,11 @@ logger = logging.getLogger(__name__)
 PARSE_MODEL = "deepseek-v4-flash"
 CODE_MODEL = "claude-opus-5"
 ENTRY_FILE = "index.html"
+
+# Hard ceiling for a single model call. A stalled upstream must fail the stage
+# with a visible error the user can retry, never hold the request open until the
+# gateway times out.
+MODEL_CALL_TIMEOUT_SECONDS = 180.0
 
 _JSON_SYSTEM = "你只输出 JSON，不要输出任何解释、Markdown 代码块之外说明或多余文字。"
 
@@ -43,6 +49,26 @@ def _extract_json_block(text: str) -> str:
     return candidate
 
 
+def _describe_model_error(model: str, exc: Exception) -> str:
+    """把上游模型异常翻译成用户可读的阶段失败原因。
+
+    模型网关以 SDK 异常形式返回额度不足、限流、鉴权失败等错误。这些异常必须收敛为
+    `GenerationAIError`，否则会穿透阶段执行、让接口返回 500（外部则表现为网关错误），
+    并且跳过失败落库与额度退款。
+    """
+    text = str(exc)
+    lowered = text.lower()
+    if "insufficient_ai_balance" in lowered or "balance is insufficient" in lowered:
+        return f"{model} 调用失败：平台 AI 额度不足，请充值后重试"
+    if "rate limit" in lowered or "429" in text:
+        return f"{model} 调用失败：请求过于频繁，请稍后重试"
+    if "401" in text or "403" in text or "permission" in lowered or "unauthorized" in lowered:
+        return f"{model} 调用失败：AI 服务授权异常（{type(exc).__name__}）"
+    if "timeout" in lowered or "timed out" in lowered or "connection" in lowered:
+        return f"{model} 调用失败：AI 服务连接异常，请稍后重试"
+    return f"{model} 调用失败：{type(exc).__name__}: {text[:200]}"
+
+
 async def _complete(system: str, user: str, model: str, max_tokens: int = 4096) -> str:
     service = AIHubService()
     request = GenTxtRequest(
@@ -55,7 +81,18 @@ async def _complete(system: str, user: str, model: str, max_tokens: int = 4096) 
         temperature=0.2,
         max_tokens=max_tokens,
     )
-    response = await service.gentxt(request)
+    try:
+        response = await asyncio.wait_for(service.gentxt(request), timeout=MODEL_CALL_TIMEOUT_SECONDS)
+    except asyncio.TimeoutError as exc:
+        logger.warning("%s 调用超过 %s 秒未返回，判定为超时", model, MODEL_CALL_TIMEOUT_SECONDS)
+        raise GenerationAIError(
+            f"{model} 调用超时（超过 {int(MODEL_CALL_TIMEOUT_SECONDS)} 秒），请稍后重试"
+        ) from exc
+    except GenerationAIError:
+        raise
+    except Exception as exc:  # noqa: BLE001 - 上游 SDK 异常必须收敛为阶段失败，不能穿透成 500
+        logger.warning("%s 调用失败：%s: %s", model, type(exc).__name__, exc)
+        raise GenerationAIError(_describe_model_error(model, exc)) from exc
     content = (response.content or "").strip()
     if not content:
         raise GenerationAIError(f"{model} 返回了空结果")

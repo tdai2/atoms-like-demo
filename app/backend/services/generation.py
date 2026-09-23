@@ -3,8 +3,9 @@
 职责：
 - 按周期校验并累计用户生成配额（`usage_quotas`）。
 - 创建项目、首个版本与六阶段任务行（`projects` / `project_versions` / `build_tasks`）。
-- 每次轮询推进一个阶段，阶段内容为真实工作：模型解析需求、模型规划方案、模型编写代码、
-  产物归档到对象存储并回读校验、按真实内容产出测试报告、发布可访问的产物地址。
+- 阶段执行由后台工作器逐个推进（`services.pipeline_runner`），HTTP 接口只做只读快照与调度；
+  阶段内容为真实工作：模型解析需求、模型规划方案、模型编写代码、产物归档到对象存储并回读校验、
+  按真实内容产出测试报告、发布可访问的产物地址。
 - 阶段失败时停在失败阶段并记录真实报错；重试开启新一批任务（`run_no` 递增），
   并把上一轮报错作为修复提示注入模型上下文。
 
@@ -21,6 +22,7 @@ from sqlalchemy import func, select, update
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from core.database import db_manager
 from models.build_tasks import Build_tasks
 from models.project_versions import Project_versions
 from models.projects import Projects
@@ -311,10 +313,10 @@ async def _run_planning(prompt: str, spec: Dict[str, Any], repair_hint: str) -> 
 
 
 async def _run_coding(
-    prompt: str, spec: Dict[str, Any], plan: Dict[str, Any], project: Projects, repair_hint: str
+    prompt: str, spec: Dict[str, Any], plan: Dict[str, Any], project_id: int, version: int, repair_hint: str
 ) -> Tuple[Dict[str, Any], str, str]:
     result = await generation_ai.write_application(prompt, spec, plan, repair_hint)
-    key = generation_artifacts.artifact_key(project.id, project.latest_version or 1)
+    key = generation_artifacts.artifact_key(project_id, version)
     await generation_artifacts.upload_html(key, result["content"])
     log = (
         f"模型生成 {len(result['files'])} 个文件（{'、'.join(result['files'])}）\n"
@@ -363,6 +365,42 @@ async def _fail_stage(db: AsyncSession, project: Projects, task: Build_tasks, me
     project.current_stage = task.stage
     project.preview_url = ""
     await db.commit()
+    await _refund_unusable_first_run(db, project, task)
+
+
+async def _refund_unusable_first_run(db: AsyncSession, project: Projects, task: Build_tasks) -> None:
+    """首轮尚未产出任何产物就失败时退还额度：平台侧没能交付结果，不该由用户买单。
+
+    额度在创建项目时占用（早于任何真实生成），创建接口本身已不再调用模型，因此失败只可能
+    发生在后续阶段推进里。这里以「首轮 + 尚无产物」为条件做一次补偿：第 2 轮及以后都是免费
+    重试，一律不再退款，所以每个项目最多退一次，不会重复退款。
+    """
+    if (task.run_no or 1) != 1 or project.artifact_key:
+        return
+    quota = await _select_quota(db, project.user_id, current_period())
+    if quota is None or not quota.used:
+        return
+    await refund_quota(db, quota.id)
+    logger.info("project %s failed before any artifact, refunded quota %s", project.id, quota.id)
+
+
+async def _sync_version_summary(db: AsyncSession, project: Projects) -> None:
+    """发布成功后把版本摘要回填成真实的页面、实体与文件数量。"""
+    version = await db.scalar(
+        select(Project_versions).where(
+            Project_versions.project_id == project.id,
+            Project_versions.version == (project.latest_version or 1),
+        )
+    )
+    if version is None:
+        return
+    spec = spec_from_project(project)
+    plan = _load_json(project.plan_json, {})
+    files = plan.get("files") if isinstance(plan, dict) else None
+    version.diff_summary = (
+        f"首个版本：{len(spec['pages'])} 个页面、{len(spec['entities'])} 个数据实体、"
+        f"{len(files) if isinstance(files, list) else 0} 个文件"
+    )
 
 
 async def _claim_stage(db: AsyncSession, task: Build_tasks, project: Projects) -> bool:
@@ -386,14 +424,27 @@ async def _claim_stage(db: AsyncSession, task: Build_tasks, project: Projects) -
     return True
 
 
-async def _recover_stale_stage(db: AsyncSession, project: Projects, task: Build_tasks) -> bool:
-    """回收超时未完成的「进行中」阶段：标记失败并允许用户重试。"""
+async def _recover_stale_stage(
+    db: AsyncSession,
+    project: Projects,
+    task: Build_tasks,
+    orphan_before: Optional[datetime] = None,
+) -> bool:
+    """回收失去执行者的「进行中」阶段：标记失败并允许用户重试。
+
+    判定条件二选一：
+    - 阶段已超过 `STAGE_STALE_SECONDS` 未回写；
+    - `orphan_before` 之前的阶段：调用方（进程启动恢复）用它声明「本进程不可能在执行这个
+      阶段」，因此上个进程崩溃或重启遗留的阶段无需再等待陈旧阈值即可回收。
+    """
     started = task.updated_at or task.created_at
     if started is None:
         return False
     if started.tzinfo is None:
         started = started.replace(tzinfo=timezone.utc)
-    if datetime.now(timezone.utc) - started < timedelta(seconds=STAGE_STALE_SECONDS):
+    stale = datetime.now(timezone.utc) - started >= timedelta(seconds=STAGE_STALE_SECONDS)
+    orphan = orphan_before is not None and started < orphan_before
+    if not (stale or orphan):
         return False
     logger.warning("project %s stage %s stale, marking failed", project.id, task.stage)
     await _fail_stage(
@@ -406,91 +457,196 @@ async def _recover_stale_stage(db: AsyncSession, project: Projects, task: Build_
     return True
 
 
-async def _execute_stage(
-    db: AsyncSession,
-    project: Projects,
-    task: Build_tasks,
-    spec: Dict[str, Any],
-    repair_hint: str,
-) -> None:
-    """执行单个阶段：先原子抢占为进行中，再慢调用，最后写回结果。"""
-    if not await _claim_stage(db, task, project):
-        return
+def _stage_snapshot(project: Projects, task: Build_tasks) -> Dict[str, Any]:
+    """复制阶段执行所需的只读输入。
 
-    try:
-        if task.stage == "parsing":
-            spec_new, log, summary = await _run_parsing(project.prompt, repair_hint)
-            project.spec_json = json.dumps(spec_new, ensure_ascii=False)
-            project.name = spec_new["display_name"]
-            spec.clear()
-            spec.update(spec_new)
-            project.plan_json = ""
-            project.test_report_json = ""
-        elif task.stage == "planning":
-            plan, log, summary = await _run_planning(project.prompt, spec, repair_hint)
-            project.plan_json = json.dumps(plan, ensure_ascii=False)
-        elif task.stage == "coding":
-            plan = _load_json(project.plan_json, {"files": [], "component_tree": [], "notes": ""})
-            extra, log, summary = await _run_coding(project.prompt, spec, plan, project, repair_hint)
-            project.artifact_key = extra["artifact_key"]
-            plan["files"] = [{"path": path, "purpose": ""} for path in extra["files"]]
-            project.plan_json = json.dumps(plan, ensure_ascii=False)
-        elif task.stage == "building":
-            extra, log, summary = await _run_building(project.artifact_key or "", repair_hint)
-            project.test_report_json = json.dumps(extra["report"], ensure_ascii=False)
-        elif task.stage == "testing":
-            extra, log, summary = await _run_testing(project.artifact_key or "")
-            project.test_report_json = json.dumps(extra["report"], ensure_ascii=False)
-        else:
-            _, log, summary = await _run_deploying(project.artifact_key or "")
-            # 预览地址按对象键即时解析，库里只保留对象键，避免落库会过期的签名链接。
-            project.preview_url = ""
+    模型与对象存储的慢调用必须在不持有数据库连接的情况下进行，因此先把需要的字段复制成
+    普通值；慢调用结束后再用新的短事务回写结果。
+    """
+    return {
+        "project_id": project.id,
+        "task_id": task.id,
+        "stage": task.stage,
+        "stage_name": task.stage_name or task.stage,
+        "prompt": project.prompt or "",
+        "spec": spec_from_project(project),
+        "plan": _load_json(project.plan_json, {"files": [], "component_tree": [], "notes": ""}),
+        "artifact_key": project.artifact_key or "",
+        "latest_version": project.latest_version or 1,
+    }
 
-        needs_version = task.stage == "deploying"
+
+async def _run_stage_work(snapshot: Dict[str, Any], repair_hint: str) -> Tuple[Dict[str, Any], str, str]:
+    """执行阶段真实工作，返回「需要回写的字段」与展示用的日志、摘要。"""
+    stage = snapshot["stage"]
+    if stage == "parsing":
+        spec, log, summary = await _run_parsing(snapshot["prompt"], repair_hint)
+        return (
+            {
+                "spec_json": json.dumps(spec, ensure_ascii=False),
+                "name": spec["display_name"],
+                "plan_json": "",
+                "test_report_json": "",
+            },
+            log,
+            summary,
+        )
+    if stage == "planning":
+        plan, log, summary = await _run_planning(snapshot["prompt"], snapshot["spec"], repair_hint)
+        return {"plan_json": json.dumps(plan, ensure_ascii=False)}, log, summary
+    if stage == "coding":
+        extra, log, summary = await _run_coding(
+            snapshot["prompt"],
+            snapshot["spec"],
+            snapshot["plan"],
+            snapshot["project_id"],
+            snapshot["latest_version"],
+            repair_hint,
+        )
+        plan = dict(snapshot["plan"])
+        plan["files"] = [{"path": path, "purpose": ""} for path in extra["files"]]
+        return (
+            {"artifact_key": extra["artifact_key"], "plan_json": json.dumps(plan, ensure_ascii=False)},
+            log,
+            summary,
+        )
+    if stage == "building":
+        extra, log, summary = await _run_building(snapshot["artifact_key"], repair_hint)
+        return {"test_report_json": json.dumps(extra["report"], ensure_ascii=False)}, log, summary
+    if stage == "testing":
+        extra, log, summary = await _run_testing(snapshot["artifact_key"])
+        return {"test_report_json": json.dumps(extra["report"], ensure_ascii=False)}, log, summary
+    _, log, summary = await _run_deploying(snapshot["artifact_key"])
+    # 预览地址按对象键即时解析，库里只保留对象键，避免落库会过期的签名链接。
+    return {"preview_url": ""}, log, summary
+
+
+async def _load_stage_rows(
+    db: AsyncSession, snapshot: Dict[str, Any]
+) -> Tuple[Optional[Projects], Optional[Build_tasks]]:
+    project = await db.scalar(select(Projects).where(Projects.id == snapshot["project_id"]))
+    task = await db.scalar(select(Build_tasks).where(Build_tasks.id == snapshot["task_id"]))
+    return project, task
+
+
+async def _finish_stage(snapshot: Dict[str, Any], updates: Dict[str, Any], log: str, summary: str) -> None:
+    """用独立短事务回写阶段结果；此时慢调用已结束，连接不会被长期占用。"""
+    async with db_manager.session() as db:
+        project, task = await _load_stage_rows(db, snapshot)
+        if project is None or task is None or task.stage_state != "running":
+            # 阶段已被其它执行者回收、或项目已被删除：丢弃本次结果，不覆盖更新后的状态。
+            logger.info(
+                "project %s stage %s result dropped (stage no longer running)",
+                snapshot["project_id"],
+                snapshot["stage"],
+            )
+            return
+        for field, value in updates.items():
+            setattr(project, field, value)
         task.stage_state = "done"
         task.stage_log = log
         task.output_summary = summary
         project.status = "running"
-        if needs_version:
+        project.current_stage = task.stage
+        if task.stage == "deploying":
             project.status = "succeeded"
             project.latest_version = project.latest_version or 1
+            await _sync_version_summary(db, project)
         await db.commit()
-        logger.info("project %s stage %s done", project.id, task.stage)
-    except (GenerationAIError, ArtifactError, ValueError) as exc:
-        logger.warning("project %s stage %s failed: %s", project.id, task.stage, exc)
-        await _fail_stage(
-            db,
-            project,
-            task,
-            f"{task.stage_name}失败：{exc}",
-            f"阶段执行失败：{exc}",
+    logger.info("project %s stage %s done", snapshot["project_id"], snapshot["stage"])
+
+
+async def _abort_stage(snapshot: Dict[str, Any], message: str, log: str) -> None:
+    """阶段失败落库：独立短事务写入可见失败态，并执行首轮额度退款判定。"""
+    async with db_manager.session() as db:
+        project, task = await _load_stage_rows(db, snapshot)
+        if project is None or task is None or task.stage_state != "running":
+            logger.info(
+                "project %s stage %s failure dropped (stage no longer running)",
+                snapshot["project_id"],
+                snapshot["stage"],
+            )
+            return
+        await _fail_stage(db, project, task, message, log)
+
+
+async def _claim_next_stage(
+    user_id: str, project_id: int, orphan_before: Optional[datetime] = None
+) -> Tuple[Optional[Dict[str, Any]], str]:
+    """短事务内选出并抢占下一个待执行阶段，返回执行快照与修复提示。
+
+    第一个返回值为 `None` 时说明本次没有可执行阶段，此时第二个返回值是原因：
+    `finished`（已到终态或无待执行阶段）或 `idle`（阶段正被其它执行者持有）。
+    """
+    async with db_manager.session() as db:
+        project = await db.scalar(
+            select(Projects).where(Projects.id == project_id, Projects.user_id == user_id)
         )
+        if project is None or (project.status or "") in TERMINAL_STATUSES:
+            return None, "finished"
+
+        rows = list(
+            await db.scalars(
+                select(Build_tasks).where(Build_tasks.project_id == project_id).order_by(Build_tasks.id)
+            )
+        )
+        if not rows:
+            return None, "finished"
+
+        run_no = _latest_run_no(rows)
+        tasks = _stage_tasks(rows, run_no)
+
+        running = next((task for task in tasks if task.stage_state == "running"), None)
+        if running is not None:
+            # 正常路径下不会看到「进行中」阶段：工作器在同一项目内串行推进。
+            # 见到它意味着持有者已消失（进程重启/崩溃），或另一进程正在执行；
+            # 因此只在超过陈旧阈值、或确认早于本进程启动时才回收。
+            recovered = await _recover_stale_stage(db, project, running, orphan_before=orphan_before)
+            return None, "finished" if recovered else "idle"
+
+        pending = next((task for task in tasks if task.stage_state == "pending"), None)
+        if pending is None:
+            if (project.status or "") != "succeeded":
+                project.status = "succeeded"
+                await db.commit()
+            return None, "finished"
+
+        repair_hint = ""
+        if run_no > 1:
+            previous = next(
+                (task for task in rows if (task.run_no or 1) == run_no - 1 and task.error_message),
+                None,
+            )
+            repair_hint = generation_ai.build_repair_hint(previous.error_message if previous else "")
+
+        snapshot = _stage_snapshot(project, pending)
+        if not await _claim_stage(db, pending, project):
+            return None, "idle"
+        return snapshot, repair_hint
 
 
 async def create_project(
     db: AsyncSession, user_id: str, prompt: str, template_key: str = ""
 ) -> Tuple[Projects, Usage_quotas]:
-    """占用一次额度，用真实模型解析需求，随后创建项目与六阶段任务。"""
-    # 额度先原子占用并提交，随后的模型调用不再持有事务。
-    quota = await consume_quota(db, user_id)
+    """占用一次额度，创建项目与六阶段任务。
 
-    try:
-        spec = await generation_ai.parse_requirements(prompt, template_key)
-    except Exception as exc:  # noqa: BLE001 - 模型不可用时退还额度
-        logger.error("parse requirements failed: %s", exc)
-        await refund_quota(db, quota.id)
-        raise
+    这里不调用模型：六个阶段全部交给后台工作器（`services.pipeline_runner`）逐个推进。
+    创建请求只做两次数据库写入，因此不会被上游模型拖长；此前把需求解析放在创建请求里，
+    一次模型卡顿就会让请求挂到网关超时，用户看到的是 502 而不是可见的阶段失败。
+    """
+    # 额度先原子占用并提交，后续阶段执行不再持有该事务。
+    quota = await consume_quota(db, user_id)
 
     project: Projects = Projects(
         user_id=user_id,
-        name=spec["display_name"],
+        name=prompt.strip()[:40] or "未命名应用",
         prompt=prompt,
         status="running",
         current_stage=STAGES[0][0],
         template_key=template_key or "",
         preview_url="",
         latest_version=1,
-        spec_json=json.dumps(spec, ensure_ascii=False),
+        spec_json="",
         plan_json="",
         artifact_key="",
         test_report_json="",
@@ -498,19 +654,14 @@ async def create_project(
     db.add(project)
     await db.commit()
 
-    precomplete = {
-        "parsing": (
-            parsing_log(prompt, spec),
-            f"结构化需求：{len(spec['entities'])} 个实体 / {len(spec['pages'])} 个页面",
-        )
-    }
-    await _create_run(db, user_id, project, 1, precomplete=precomplete)
+    await _create_run(db, user_id, project, 1)
     db.add(
         Project_versions(
             user_id=user_id,
             project_id=project.id,
             version=1,
-            diff_summary=f"首个版本：{len(spec['pages'])} 个页面、{len(spec['entities'])} 个数据实体",
+            # 方案尚未解析，先写中性摘要，发布阶段成功后回填真实的页面与文件数量。
+            diff_summary="首个版本：等待生成完成",
             files_key=generation_artifacts.artifact_key(project.id, 1),
         )
     )
@@ -547,13 +698,30 @@ async def retry_project(db: AsyncSession, user_id: str, project_id: int) -> Proj
 
 
 async def sync_pipeline(db: AsyncSession, user_id: str, project_id: int) -> Dict[str, Any]:
-    """推进一个阶段并返回当前流水线快照，供前端轮询。"""
-    project = await db.scalar(select(Projects).where(Projects.id == project_id, Projects.user_id == user_id))
+    """只读返回当前流水线快照。
+
+    阶段推进由后台工作器完成（`services.pipeline_runner`），接口只做数据库读取与预览地址解析。
+    此前把阶段执行内联在轮询请求里，单次模型调用最长 180 秒，远超上游网关时限
+    （Cloudflare 约 100 秒），用户看到的是 502/524 而不是可见的阶段失败。
+
+    读取使用 `populate_existing`：工作器在独立会话里写库，本会话可能已缓存同一行的旧值，
+    强制以数据库当前值为准（刷新发生在异步查询内部，不会触发同步惰性加载）。
+    """
+    project = await db.scalar(
+        select(Projects)
+        .where(Projects.id == project_id, Projects.user_id == user_id)
+        .execution_options(populate_existing=True)
+    )
     if project is None:
         raise ProjectNotFound
 
     rows = list(
-        await db.scalars(select(Build_tasks).where(Build_tasks.project_id == project_id).order_by(Build_tasks.id))
+        await db.scalars(
+            select(Build_tasks)
+            .where(Build_tasks.project_id == project_id)
+            .order_by(Build_tasks.id)
+            .execution_options(populate_existing=True)
+        )
     )
     if not rows:
         raise ProjectNotFound
@@ -561,33 +729,6 @@ async def sync_pipeline(db: AsyncSession, user_id: str, project_id: int) -> Dict
     run_no = _latest_run_no(rows)
     tasks = _stage_tasks(rows, run_no)
     spec = spec_from_project(project)
-
-    if (project.status or "") not in TERMINAL_STATUSES:
-        pending = next((task for task in tasks if task.stage_state == "pending"), None)
-        running = next((task for task in tasks if task.stage_state == "running"), None)
-        if running is not None:
-            # 同一阶段可能被并发轮询重复触发；只有超时未回写的才回收为失败。
-            await _recover_stale_stage(db, project, running)
-        elif pending is None:
-            project.status = "succeeded"
-            await db.commit()
-        else:
-            repair_hint = ""
-            if run_no > 1:
-                previous = next(
-                    (task for task in rows if (task.run_no or 1) == run_no - 1 and task.error_message),
-                    None,
-                )
-                repair_hint = generation_ai.build_repair_hint(previous.error_message if previous else "")
-            await _execute_stage(db, project, pending, spec, repair_hint)
-            tasks = _stage_tasks(
-                list(
-                    await db.scalars(
-                        select(Build_tasks).where(Build_tasks.project_id == project_id).order_by(Build_tasks.id)
-                    )
-                ),
-                run_no,
-            )
 
     report = _load_json(project.test_report_json, [])
     # 预览地址只按对象键即时解析，保证每次轮询/刷新拿到的都是有效链接。
@@ -605,6 +746,51 @@ async def sync_pipeline(db: AsyncSession, user_id: str, project_id: int) -> Dict
         "test_report": report if project.status == "succeeded" else [],
         "preview_url": preview_url,
     }
+
+
+async def advance_pipeline(
+    user_id: str, project_id: int, orphan_before: Optional[datetime] = None
+) -> str:
+    """推进一个阶段：短事务抢占 → 不持有连接的慢调用 → 短事务回写结果。
+
+    阶段执行包含最长 180 秒的模型调用。此前抢占、慢调用、回写共用一个会话，整段慢调用都
+    占着数据库连接；无服务器模式下连接池很小，浏览器轮询与后台阶段互相争抢，请求会以
+    `QueuePool limit ... timed out` 失败（经网关放大为 502）。拆成三段后，慢调用期间不持有
+    任何连接，并发轮询与阶段执行可以并行。
+
+    返回值：
+    - `advanced`：本次执行了一个阶段。
+    - `finished`：项目已到终态，或无待执行阶段。
+    - `idle`：有阶段正被其它执行者持有；本次不重复执行。
+    """
+    snapshot, detail = await _claim_next_stage(user_id, project_id, orphan_before)
+    if snapshot is None:
+        return detail
+
+    repair_hint = detail
+    try:
+        updates, log, summary = await _run_stage_work(snapshot, repair_hint)
+    except (GenerationAIError, ArtifactError, ValueError) as exc:
+        logger.warning("project %s stage %s failed: %s", snapshot["project_id"], snapshot["stage"], exc)
+        await _abort_stage(
+            snapshot,
+            f"{snapshot['stage_name']}失败：{exc}",
+            f"阶段执行失败：{exc}",
+        )
+        return "advanced"
+    except Exception as exc:  # noqa: BLE001 - 意外异常也落成可见失败，避免阶段永久停在「进行中」
+        logger.error(
+            "project %s stage %s crashed: %s", snapshot["project_id"], snapshot["stage"], exc, exc_info=True
+        )
+        await _abort_stage(
+            snapshot,
+            f"{snapshot['stage_name']}异常中断：{exc}",
+            f"阶段执行异常：{exc}",
+        )
+        return "advanced"
+
+    await _finish_stage(snapshot, updates, log, summary)
+    return "advanced"
 
 
 async def count_projects(db: AsyncSession, user_id: str) -> int:

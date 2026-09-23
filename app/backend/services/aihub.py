@@ -81,18 +81,55 @@ VOICE_MAP: dict[tuple[str, str], str] = {
 DEFAULT_VOICE = {"male": "Ethan", "female": "Cherry"}
 
 
+# Per-request limits for upstream AI calls. Without an explicit timeout the SDK
+# waits indefinitely; a stalled upstream then keeps the HTTP request open until
+# the edge gateway gives up, which surfaces to users as a 502. `max_retries` is
+# pinned explicitly because the SDK default (2) multiplies a single stall into
+# several sequential waits inside the same user-facing request.
+AI_CONNECT_TIMEOUT_SECONDS = 10.0
+AI_READ_TIMEOUT_SECONDS = 180.0
+AI_WRITE_TIMEOUT_SECONDS = 60.0
+AI_POOL_TIMEOUT_SECONDS = 10.0
+AI_MAX_RETRIES = 1
+
+_shared_client: Optional["AsyncOpenAI"] = None
+
+
+def _shared_ai_client() -> Optional["AsyncOpenAI"]:
+    """Return the process-wide AI client, creating it lazily on first use.
+
+    Constructing ``AsyncOpenAI`` per call would open a separate connection pool
+    each time and never close it, so long-running processes slowly leak sockets.
+    Reusing one instance keeps a single pool whose connections are recycled.
+    """
+    global _shared_client
+    if _shared_client is not None:
+        return _shared_client
+    if not (settings.app_ai_base_url and settings.app_ai_key):
+        return None
+
+    import httpx
+    from openai import AsyncOpenAI
+
+    _shared_client = AsyncOpenAI(
+        api_key=settings.app_ai_key,
+        base_url=settings.app_ai_base_url.rstrip("/"),
+        timeout=httpx.Timeout(
+            AI_READ_TIMEOUT_SECONDS,
+            connect=AI_CONNECT_TIMEOUT_SECONDS,
+            write=AI_WRITE_TIMEOUT_SECONDS,
+            pool=AI_POOL_TIMEOUT_SECONDS,
+        ),
+        max_retries=AI_MAX_RETRIES,
+    )
+    return _shared_client
+
+
 class AIHubService:
     """AI Hub service class that wraps AI SDK calls."""
 
     def __init__(self):
-        self.client: Optional["AsyncOpenAI"] = None
-        if settings.app_ai_base_url and settings.app_ai_key:
-            from openai import AsyncOpenAI
-
-            self.client = AsyncOpenAI(
-                api_key=settings.app_ai_key,
-                base_url=settings.app_ai_base_url.rstrip("/"),
-            )
+        self.client: Optional["AsyncOpenAI"] = _shared_ai_client()
 
     def _require_ai_client(self) -> "AsyncOpenAI":
         """Return the configured AI client or raise a configuration error."""
