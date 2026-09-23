@@ -2151,3 +2151,49 @@ For more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/St
 2026-09-23 16:09:51,567 - dependencies.auth - DEBUG - Authentication required for request GET /api/v1/auth/me
 2026-09-23 16:09:51,572 - dependencies.auth - DEBUG - Authentication required for request GET /api/v1/auth/me
 2026-09-23 16:09:51,577 - dependencies.auth - DEBUG - Authentication required for request GET /api/v1/auth/me
+2026-09-23 16:10:43,299 - main - INFO - === Logging system initialized ===
+2026-09-23 16:10:43,300 - main - INFO - Log file: logs/app_20260923.log
+2026-09-23 16:10:43,300 - main - INFO - Log level: DEBUG
+2026-09-23 16:10:43,300 - main - INFO - Log date: 20260923
+2026-09-23 16:10:43,419 - main - INFO - Included router: routers.aihub.router
+2026-09-23 16:10:44,384 - main - INFO - Included router: routers.auth.router
+2026-09-23 16:10:44,601 - main - INFO - Included router: routers.build_tasks.router
+2026-09-23 16:10:44,993 - main - INFO - Included router: routers.generation.router
+2026-09-23 16:10:44,996 - main - INFO - Included router: routers.health.router
+2026-09-23 16:10:45,020 - main - INFO - Included router: routers.project_versions.router
+2026-09-23 16:10:45,085 - main - INFO - Included router: routers.projects.router
+2026-09-23 16:10:45,096 - main - INFO - Included router: routers.settings.router
+2026-09-23 16:10:45,148 - main - INFO - Included router: routers.storage.router
+2026-09-23 16:10:45,171 - main - INFO - Included router: routers.usage_quotas.router
+2026-09-23 16:10:45,182 - main - INFO - Included router: routers.user.router
+2026-09-23 16:10:45,183 - main - INFO - === Application startup initiated ===
+2026-09-23 16:10:45,183 - main - INFO - === Application startup completed successfully ===
+2026-09-23 16:10:45,183 - core.config - DEBUG - Read dynamic attribute database_url from environment variable DATABASE_URL
+2026-09-23 16:10:45,184 - core.database - INFO - Using QueuePool for non-Lambda environment (pool_pre_ping=True, pool_size=5, max_overflow=5, pool_recycle=280s, pool_timeout=30s, pool_use_lifo=True)
+2026-09-23 16:10:45,288 - core.database - INFO - Database connection initialized successfully
+2026-09-23 16:17:41,306 - main - INFO - === Logging system initialized ===
+2026-09-23 16:17:41,306 - main - INFO - Log file: logs/app_20260923.log
+2026-09-23 16:17:41,306 - main - INFO - Log level: DEBUG
+2026-09-23 16:17:41,306 - main - INFO - Log date: 20260923
+2026-09-23 16:17:41,412 - main - INFO - Included router: routers.aihub.router
+2026-09-23 16:17:42,459 - main - INFO - Included router: routers.auth.router
+2026-09-23 16:17:42,651 - main - INFO - Included router: routers.build_tasks.router
+2026-09-23 16:17:43,191 - main - INFO - Included router: routers.generation.router
+2026-09-23 16:17:43,194 - main - INFO - Included router: routers.health.router
+2026-09-23 16:17:43,270 - main - INFO - Included router: routers.project_versions.router
+2026-09-23 16:17:43,304 - main - INFO - Included router: routers.projects.router
+2026-09-23 16:17:43,318 - main - INFO - Included router: routers.settings.router
+2026-09-23 16:17:43,354 - main - INFO - Included router: routers.storage.router
+2026-09-23 16:17:43,387 - main - INFO - Included router: routers.usage_quotas.router
+2026-09-23 16:17:43,400 - main - INFO - Included router: routers.user.router
+2026-09-23 16:17:43,401 - main - INFO - === Application startup initiated ===
+2026-09-23 16:17:43,401 - main - INFO - === Application startup completed successfully ===
+2026-09-23 16:17:43,401 - core.config - DEBUG - Read dynamic attribute database_url from environment variable DATABASE_URL
+2026-09-23 16:17:43,402 - core.database - INFO - Using QueuePool for non-Lambda environment (pool_pre_ping=True, pool_size=5, max_overflow=5, pool_recycle=280s, pool_timeout=30s, pool_use_lifo=True)
+2026-09-23 16:17:43,464 - core.database - INFO - Database connection initialized successfully
+2026-09-23 16:17:46,166 - core.config - DEBUG - Read dynamic attribute jwt_secret_key from environment variable JWT_SECRET_KEY
+2026-09-23 16:17:46,296 - core.config - DEBUG - Read dynamic attribute jwt_algorithm from environment variable JWT_ALGORITHM
+2026-09-23 16:19:34,064 - dependencies.auth - DEBUG - Authentication required for request GET /api/v1/auth/me
+2026-09-23 16:19:34,070 - dependencies.auth - DEBUG - Authentication required for request GET /api/v1/auth/me
+2026-09-23 16:19:34,075 - dependencies.auth - DEBUG - Authentication required for request GET /api/v1/auth/me
+2026-09-23 16:19:34,080 - dependencies.auth - DEBUG - Authentication required for request GET /api/v1/auth/me

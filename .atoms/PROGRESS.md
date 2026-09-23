@@ -71,6 +71,7 @@ last_updated: 2026-09-22T07:20:00Z
 | V3-3 | 后端语法检查（`py_compile`）与前端 `pnpm run lint && pnpm run build` | Alex | done | P3-6 |
 | P3-8 | 文档归档：前端开发文档与更新日志文档迁入 `docs/`（`docs/frontend.md`、`docs/changelog.md`），根 README、`.wiki.md` 与 `.atoms/ARCHITECTURE.md` 索引同步 | Alex | done | V3-3 |
 | P3-9 | 更新日志补齐 `v0.8.0`（真实生成与可访问产物）：真实模型六阶段、对象存储 iframe 预览、后台异步执行、配额退款、542/502 修复等阶段三交付，`docs/changelog.md` 与数据源同步 | Alex | done | P3-8 |
+| P3-10 | 后续阶段顺序调整：原阶段四（对话式增量修改与版本回溯）后移至阶段六，测试用例生成与 Bug 自动修复各前移一阶段；`docs/plan.md`、`docs/frontend.md`、`app/frontend/README.md`、`docs/mission.md` 与上下文文件同步 | Alex | done | P3-9 |
 
 ## Progress Log
 
