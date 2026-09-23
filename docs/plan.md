@@ -195,7 +195,7 @@
 | 我的项目列表页（加载 / 未登录 / 空列表 / 失败重试 / 成功列表） | `src/pages/Projects.tsx` |
 | 项目详情页（流水线快照、方案、测试报告、失败重试） | `src/pages/ProjectDetail.tsx` |
 | 首页生成链路改为创建任务 + 轮询服务端阶段状态 | `src/pages/Index.tsx` |
-| 更新日志页与发布记录数据源（最新 `v0.7.0` 覆盖账号与项目持久化） | `src/pages/Changelog.tsx`、`src/data/changelog.ts` |
+| 更新日志页与发布记录数据源（最新 `v0.8.0` 覆盖真实生成与可访问产物） | `src/pages/Changelog.tsx`、`src/data/changelog.ts` |
 | 顶栏账号区（登录 / 免费开始 / 账号邮箱 / 退出登录）与登出降级 | `src/components/SiteHeader.tsx`、`src/hooks/useAuthStatus.ts`、`app/backend/routers/auth.py` |
 
 验证方式：后端 Python 语法检查通过；`pnpm run lint` 与 `pnpm run build` 通过。

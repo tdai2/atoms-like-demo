@@ -125,7 +125,7 @@
 - 语义化标签与充足对比度；键盘焦点环可见；支持 `prefers-reduced-motion`，系统减弱动效时停用背景动画。
 - `index.html` 中的标题、描述与 logo 由概览系统通过 `data-mgx-overview` 标记管理，不手动修改。
 - `src/pages/AuthCallback.tsx` 为平台只读文件，不做修改。
-- 发布记录集中在 `src/data/changelog.ts`：新增版本时在数组**最前面**追加一条 `Release`，页面自动置顶并标记 `LATEST`，类型筛选计数与版本跳转同步更新；文档侧同步 `docs/changelog.md`。当前最新为 `v0.7.0`。
+- 发布记录集中在 `src/data/changelog.ts`：新增版本时在数组**最前面**追加一条 `Release`，页面自动置顶并标记 `LATEST`，类型筛选计数与版本跳转同步更新；文档侧同步 `docs/changelog.md`。当前最新为 `v0.8.0`。
 - 不在前端硬编码登录态相关的入口（如页脚「登录」），账号入口统一由 `SiteHeader` 的账号区表达。
 
 ## 七、构建配置要点

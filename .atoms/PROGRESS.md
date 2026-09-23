@@ -70,6 +70,7 @@ last_updated: 2026-09-22T07:20:00Z
 | V3-2 | 六阶段流水线验证：状态 `succeeded`、结构校验 `5/5`、冒烟 `4/4`、覆盖率 `86%`、重试 `run_no` 递增不重复扣额（`verify_pipeline.py`） | Alex | done | V3-1 |
 | V3-3 | 后端语法检查（`py_compile`）与前端 `pnpm run lint && pnpm run build` | Alex | done | P3-6 |
 | P3-8 | 文档归档：前端开发文档与更新日志文档迁入 `docs/`（`docs/frontend.md`、`docs/changelog.md`），根 README、`.wiki.md` 与 `.atoms/ARCHITECTURE.md` 索引同步 | Alex | done | V3-3 |
+| P3-9 | 更新日志补齐 `v0.8.0`（真实生成与可访问产物）：真实模型六阶段、对象存储 iframe 预览、后台异步执行、配额退款、542/502 修复等阶段三交付，`docs/changelog.md` 与数据源同步 | Alex | done | P3-8 |
 
 ## Progress Log
 
@@ -86,6 +87,8 @@ last_updated: 2026-09-22T07:20:00Z
 - 2026-09-23 新增并跑通可靠性用例 `verify_quota_refund.py`：在真实模型失败（`PermissionDeniedError`，余额不足）路径下断言额度回到 `0/20`、残留项目 `0`、残留阶段任务 `0`（`RESULT quota refund: OK`）。即外部模型不可用时用户额度不会被白扣，也不会留下半成品项目；同时该结果反证本地容错修复后 `verify_stage3.py` 的真实 AI 链路已可用（同一环境下解析/规划/代码生成全部成功）。
 - 2026-09-23 更新日志追加 `v0.7.0` 发布记录（`src/data/changelog.ts`）：账号入口、我的项目列表与详情、额度视图、顶栏账号区、登录后回跳聚焦、页脚登录入口移除与登出 500 修复；页面自动置顶并标记 LATEST，类型筛选计数与版本跳转随之更新（当前 33 条、7 个版本）。
 - 2026-09-23 文档同步：`docs/plan.md` 修正阶段一占位页范围（更新日志与登录已替换为真实页面）并补充阶段二交付清单条目；`app/frontend/README.md` 增加发布记录维护约定；根 `README.md` 补充账号体验与最新发布记录；`.wiki.md` 覆盖 `v0.7.0` 发布内容与验证说明。
+- 2026-09-23 更新日志补齐 `v0.8.0`（`src/data/changelog.ts`）：真实模型六阶段、对象存储 iframe 预览、创建接口后台异步、配额条件原子扣减与失败退款、阶段原子抢占与陈旧回收、慢调用前后拆分事务、结构化输出截断容错、预览地址即时解析、网关 502 修复与登出回跳路由补齐；同时补齐用户反馈缺失的登出回跳条目。`docs/changelog.md` 按数据源逐条同步（版本号、日期、标题、摘要、标签、条目与类型），当前共 8 个版本、43 条条目（新增 18 / 优化 15 / 修复 10）。引用最新版本号的 `README.md`、`docs/plan.md`、`docs/frontend.md`、`app/frontend/README.md`、`.wiki.md` 与上下文文件同步更新。
+- 2026-09-23 更新日志核对通过：`/changelog` 页面实测渲染 `total: 43 · versions: 8 · latest: 2026-09-23`，`v0.8.0` 置顶并标记 `LATEST`，类型筛选计数（全部 43 / 新增 18 / 优化 15 / 修复 10）与右侧版本锚点（`v0.8.0`～`v0.1.0`）均正确；`docs/changelog.md` 与数据源逐条一致，无残留旧版本号或旧条目数描述。前端 `pnpm run lint && pnpm run build` 通过（退出码 0，预渲染 `/` 与 `/blog/`）。
 
 - 2026-09-23 删除首页页脚角落与账号状态无关的硬编码「登录」入口（已登录时仍显示登录）；登出链路加固：后端 `/api/v1/auth/logout` 支持 GET/POST 且地址构造失败时降级不再抛 500，前端 `useAuthStatus.logout()` 在平台登出接口异常时兜底回到首页。
 

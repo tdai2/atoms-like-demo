@@ -54,7 +54,7 @@ atoms_demo/
 
 阶段二**账号与项目持久化已完成**：Atoms Cloud 已激活，`projects`、`build_tasks`、`project_versions`、`usage_quotas` 四张表落库；生成链路改为 `POST /api/v1/generation/projects` 创建任务并轮询项目详情，阶段状态与测试报告由服务端持久化；前端接入 Atoms 账号三态，新增「我的项目」列表页与项目详情页，登录用户可查看、重试与删除自己的项目。`pnpm run lint` 与 `pnpm run build` 通过。
 
-阶段二同时补齐了账号体验与发布记录：顶栏账号区在登录后显示账号邮箱与「退出登录」，未登录显示「登录 / 免费开始」；首页页脚不再出现与账号状态无关的登录入口；`/changelog` 最新条目为 `v0.7.0`（账号体系与项目持久化）。
+阶段二同时补齐了账号体验与发布记录：顶栏账号区在登录后显示账号邮箱与「退出登录」，未登录显示「登录 / 免费开始」；首页页脚不再出现与账号状态无关的登录入口；`/changelog` 目前共 8 个版本、43 条变更条目，最新为 `v0.8.0`（真实生成与可访问产物），上一版为 `v0.7.0`（账号体系与项目持久化）。
 
 阶段三**真实生成与可访问产物已完成**：六个阶段全部由真实模型调用驱动（需求解析 `deepseek-v4-flash`，方案规划与代码编写 `claude-opus-5`），生成的单文件应用上传至对象存储 `generation-artifacts`，预览窗改为 iframe 加载真实产物地址。执行改为后台异步：创建接口只做校验、扣额与落库并立即返回，后台工作器推进阶段，前端轮询服务端状态，请求全程不持有数据库连接等待慢调用。
 
@@ -98,7 +98,7 @@ python verify_gateway_timeout.py  # 创建/轮询耗时与并发
 | [docs/plan.md](docs/plan.md) | 分层架构、状态模型、数据模型、模块划分、技术选型、实施阶段与阶段一交付清单 |
 | [docs/frontend.md](docs/frontend.md) | 前端开发文档：技术栈、路由表与博客预渲染、关键文件、生成链路与接口契约、轮询与错误处理、认证、视觉与工程约定、构建配置 |
 | [docs/backend.md](docs/backend.md) | 后端开发文档：目录结构、认证与授权、数据库与事务边界、六阶段生成流水线、API 清单、AI 与对象存储、可靠性与部署约束 |
-| [docs/changelog.md](docs/changelog.md) | 平台发布记录：`v0.7.0` 至 `v0.1.0` 的版本、日期、摘要、标签与变更条目 |
+| [docs/changelog.md](docs/changelog.md) | 平台发布记录：`v0.8.0` 至 `v0.1.0` 的版本、日期、摘要、标签与变更条目 |
 | [app/frontend/DESIGN.md](app/frontend/DESIGN.md) | 视觉规范：色彩令牌、字体、间距圆角、组件状态、动效与可访问性 |
 | [app/frontend/README.md](app/frontend/README.md) | 前端简明入口：路由与关键文件速览，完整说明以 `docs/frontend.md` 为准 |
 
