@@ -29,6 +29,10 @@ class ProjectsData(BaseModel):
     template_key: str = None
     preview_url: str = None
     latest_version: int = None
+    spec_json: str = None
+    plan_json: str = None
+    artifact_key: str = None
+    test_report_json: str = None
 
 
 class ProjectsUpdateData(BaseModel):
@@ -40,6 +44,10 @@ class ProjectsUpdateData(BaseModel):
     template_key: Optional[str] = None
     preview_url: Optional[str] = None
     latest_version: Optional[int] = None
+    spec_json: Optional[str] = None
+    plan_json: Optional[str] = None
+    artifact_key: Optional[str] = None
+    test_report_json: Optional[str] = None
 
 
 class ProjectsResponse(BaseModel):
@@ -53,6 +61,10 @@ class ProjectsResponse(BaseModel):
     template_key: Optional[str] = None
     preview_url: Optional[str] = None
     latest_version: Optional[int] = None
+    spec_json: Optional[str] = None
+    plan_json: Optional[str] = None
+    artifact_key: Optional[str] = None
+    test_report_json: Optional[str] = None
     created_at: Optional[datetime] = None
     updated_at: Optional[datetime] = None
 

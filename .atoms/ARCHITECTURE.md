@@ -4,7 +4,9 @@
 
 Atoms 风格 AI 应用生成平台：前端 SPA + Atoms Cloud 后端。核心链路：用户在首屏 Prompt Console 输入需求 → 后端按需求文本推导结构化方案并落库项目、版本与六阶段任务 → 前端轮询项目详情，由服务端时间驱动阶段状态 → 在预览窗渲染对应的真实迷你应用组件，完成后展示服务端返回的测试报告。账号复用 Atoms 内置认证，项目、任务、版本与配额均按用户隔离持久化。
 
-阶段二起生成链路不再依赖前端定时器：`POST /api/v1/generation/projects` 创建任务并占用额度，`GET /api/v1/generation/projects/{id}` 轮询阶段状态，重试复用同一项目开启新一批任务。真实模型生成与可访问的部署地址留待阶段三。
+阶段二起生成链路不再依赖前端定时器：`POST /api/v1/generation/projects` 创建任务并占用额度，`GET /api/v1/generation/projects/{id}` 轮询阶段状态，重试复用同一项目开启新一批任务。
+
+阶段三完成收尾：六个阶段全部改为真实 AI 调用（需求解析 `deepseek-v4-flash`，方案规划与代码编写 `claude-opus-5`），生成的单文件应用上传至对象存储 `generation-artifacts`，容器键为 `projects/{project_id}/v{version}/index.html`，可访问地址写入 `projects.preview_url`，预览窗改为真实 iframe；数据库只保存 `artifact_key`，签名地址即时解析，不持久化。
 
 ## Tech Stack
 
@@ -17,7 +19,9 @@ Atoms 风格 AI 应用生成平台：前端 SPA + Atoms Cloud 后端。核心链
 | 路由壳 | 首页与次级占位路由挂载 | src/App.tsx |
 | 首页 | Prompt Console、生成时间线、能力、模板库、定价、CTA | src/pages/Index.tsx |
 | 顶栏 | 粘性导航与移动端菜单 | src/components/SiteHeader.tsx |
-| 预览应用 | 三种迷你应用（看板/落地页/待办）真实 DOM 渲染 | src/components/MiniApp.tsx |
+| 真实预览 | iframe 加载对象存储产物，含加载/空地址/失败/重试状态 | src/pages/ProjectDetail.tsx, src/pages/Index.tsx |
+| 真实模型生成 | 需求解析、方案规划、代码编写与 JSON 修复重试 | app/backend/services/generation_ai.py |
+| 产物存储 | HTML 上传、回读校验、预览地址解析与可访问性检查 | app/backend/services/generation_artifacts.py |
 | 占位页 | 未建设模块的统一提示，模板详情复用 | src/pages/Placeholder.tsx |
 | 更新日志 | 平台发布记录与类型筛选、版本跳转 | src/pages/Changelog.tsx, src/data/changelog.ts |
 | 静态数据 | 预设提示词、构建步骤、模板、能力、定价 | src/data/site.ts |
@@ -35,11 +39,15 @@ Atoms 风格 AI 应用生成平台：前端 SPA + Atoms Cloud 后端。核心链
 | Decision | Choice | Rationale |
 |----------|--------|-----------|
 | 是否接入后端 | 是（Atoms Cloud） | 账号、项目归属与生成过程需要持久化与用户隔离 |
-| 生成动画 | 服务端阶段状态 + 前端轮询 | 过程可查询、可恢复，刷新页面不丢进度 |
-| 阶段推进方式 | 按任务创建时间推导 | 阶段二不引入队列与外部调用，保持事务简单 |
+| 生成进度 | 服务端阶段状态 + 前端轮询 | 过程可查询、可恢复，刷新页面不丢进度 |
+| 阶段推进方式 | 按真实阶段执行结果推进 | 阶段三由真实模型调用驱动，不再用本地定时器模拟 |
 | 失败与重试 | 停在失败阶段，重试开启新一批任务 | 落实「失败不清空」，且重试不重复扣额度 |
-| 预览窗形态 | 真实组件渲染 | 比截图更可信，也便于后续接真实生成结果 |
+| 预览窗形态 | iframe 加载对象存储产物 | 阶段三产出真实可访问应用，比组件渲染更可信 |
 | 模板缩略图 | CSS 线框 | 避免无意义 AI 配图，保持工程风一致性 |
+| 产物落库方式 | 只存对象键，预览地址即时解析 | 签名地址有有效期，持久化会导致链接过期失效 |
+| 慢调用事务边界 | AI 与对象存储调用前后不持有数据库事务 | 避免长事务占用连接池，也保证阶段状态按真实结果落库 |
+| 配额并发保护 | 条件原子更新扣减，失败退款 | 并发首次创建不超扣，模型失败不白扣用户额度 |
+| 阶段并发抢占 | 原子抢占 + `600` 秒陈旧阶段回收 | 多端轮询不会重复执行同一阶段 |
 
 ## File Tree Plan
 
@@ -59,4 +67,6 @@ DESIGN.md
 
 ## Implementation Guide
 
-阶段三接入真实模型生成时：在 `services/generation.py` 中把基于关键词的方案推导与阶段日志替换为 AI 调用（方案与代码生成用 `claude-opus-5`，需求解析用 `deepseek-v4-flash`），为 `projects.preview_url` 写入真实部署地址，并将预览窗由 `MiniApp` 组件切换为 iframe。`build_tasks` 的阶段状态机与配额校验保持现有契约不变，前端无需改动调用方式。
+阶段三已完成：`services/generation.py` 的六个阶段由真实模型调用驱动（`services/generation_ai.py` 负责需求解析、方案规划、代码编写与 JSON 一次修复；`services/generation_artifacts.py` 负责上传、回读校验与预览地址解析），预览窗已切换为 iframe。`build_tasks` 的阶段状态机与配额契约保持不变，前端调用方式未改动。
+
+后续迭代注意：新增阶段或修改结构化输出契约时，同步维护 `generation_ai.py` 的字段校验与 `docs/plan.md` 的状态模型；产物路径规则变更需同时更新 `artifact_key()` 与既有对象。

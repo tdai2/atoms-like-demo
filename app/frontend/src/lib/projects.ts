@@ -15,10 +15,14 @@ export interface StageItem {
 
 export interface ProjectSpec {
   app_name: string;
+  display_name: string;
   pages: string[];
   entities: string[];
   stack: string[];
   files: number;
+  component_tree: string[];
+  notes: string;
+  entry: string;
 }
 
 export interface TestMetric {
@@ -44,6 +48,7 @@ export interface ProjectSummary {
   template_key: string;
   preview_url: string;
   latest_version: number;
+  artifact_key: string;
   created_at: string | null;
 }
 
@@ -69,6 +74,9 @@ export interface VersionItem {
   created_at: string | null;
 }
 
+/** 单阶段可能包含模型调用与对象存储读写，轮询请求需要放宽超时。 */
+export const PIPELINE_TIMEOUT_MS = 600_000;
+
 /** 从 web-sdk / axios 抛出的错误中提取可展示的信息。 */
 export function apiErrorMessage(error: unknown, fallback: string): string {
   const candidate = error as
@@ -91,6 +99,7 @@ export async function createProject(prompt: string, templateKey = ''): Promise<P
     url: '/api/v1/generation/projects',
     method: 'POST',
     data: { prompt, template_key: templateKey },
+    options: { timeout: PIPELINE_TIMEOUT_MS },
   });
   return response.data as Pipeline;
 }
@@ -100,6 +109,7 @@ export async function fetchPipeline(projectId: number): Promise<Pipeline> {
     url: `/api/v1/generation/projects/${projectId}`,
     method: 'GET',
     data: {},
+    options: { timeout: PIPELINE_TIMEOUT_MS },
   });
   return response.data as Pipeline;
 }
@@ -109,6 +119,7 @@ export async function retryProject(projectId: number): Promise<Pipeline> {
     url: `/api/v1/generation/projects/${projectId}/retry`,
     method: 'POST',
     data: {},
+    options: { timeout: PIPELINE_TIMEOUT_MS },
   });
   return response.data as Pipeline;
 }

@@ -57,9 +57,29 @@ last_updated: 2026-09-22T07:20:00Z
 | P2-15 | 更新日志追加 `v0.7.0` 发布记录：账号体系与项目持久化、顶栏账号区、额度视图与登出修复 | Alex | done | P2-14 |
 | P2-16 | 文档同步：`docs/plan.md` 阶段一占位页范围、阶段二交付清单，前端 README 发布记录约定，根 README 当前进度 | Alex | done | P2-15 |
 | V2-6 | Lint、生产构建与 `/changelog` 页面渲染验证（发布记录更新后） | Alex | done | P2-16 |
+| P3-1 | 真实 AI 生成服务：需求解析 `deepseek-v4-flash`、方案规划与代码编写 `claude-opus-5`、JSON 一次修复与字段校验 | Alex | done | V2-6 |
+| P3-2 | 对象存储产物链路：HTML 上传、回读校验、预览地址解析与可访问性检查（`generation-artifacts`） | Alex | done | P3-1 |
+| P3-3 | 生成编排替换模拟流程：六阶段由真实调用驱动，阶段结果与失败日志落库 | Alex | done | P3-2 |
+| P3-4 | 前端预览切换真实 iframe：加载、空地址、失败与重试状态 | Alex | done | P3-3 |
+| P3-5 | 可靠性加固：配额条件原子扣减、模型失败退款、阶段原子抢占、`600` 秒陈旧阶段回收、慢调用前后拆分事务 | Alex | done | P3-3 |
+| P3-6 | 认证链路回归：补上 `/logout-callback` 回跳路由，统一登出后返回首页体验 | Alex | done | P3-4 |
+| P3-7 | 清理无引用的关键词模拟预览组件（`MiniApp.tsx`） | Alex | done | P3-4 |
+| V3-1 | 真实 AI 与对象存储验证：上传 `200`、回读成功、预览地址 `200`、无 iframe 阻断头（`verify_stage3.py`） | Alex | done | P3-5 |
+| V3-2 | 六阶段流水线验证：状态 `succeeded`、结构校验 `5/5`、冒烟 `4/4`、覆盖率 `86%`、重试 `run_no` 递增不重复扣额（`verify_pipeline.py`） | Alex | done | V3-1 |
+| V3-3 | 后端语法检查（`py_compile`）与前端 `pnpm run lint && pnpm run build` | Alex | done | P3-6 |
 
 ## Progress Log
 
+- 2026-09-23 阶段三收尾完成：六个阶段由真实 AI 驱动（需求解析 `deepseek-v4-flash`、方案规划与代码编写 `claude-opus-5`），生成的单文件应用上传至对象存储 `generation-artifacts`（键 `projects/{id}/v{n}/index.html`），可访问地址写入 `projects.preview_url`，预览窗改为真实 iframe；数据库只存 `artifact_key`，签名地址即时解析不持久化。
+- 2026-09-23 可靠性加固：配额改为条件原子扣减并在模型失败时退款，阶段执行增加原子抢占与 `600` 秒陈旧阶段回收，AI 与对象存储慢调用前后均不持有数据库事务。
+- 2026-09-23 认证链路回归修复：平台登出回跳地址 `/logout-callback` 此前未注册路由，登出后会落到空白页，现补上该页面并统一为登出后自动返回首页。
+- 2026-09-23 清理无引用的关键词模拟预览组件（`MiniApp.tsx` 及 `LoadingSpinner` 仅剩的登出页引用一并替换），仓库内不再残留模拟流程。
+- 2026-09-23 验证通过：`verify_stage3.py`（上传 `200`、回读成功、预览地址 `200`、`Content-Type: text/html; charset=utf-8`、无 `X-Frame-Options`/CSP 阻断）、`verify_pipeline.py`（最终状态 `succeeded`、结构校验 `5/5`、冒烟 `4/4`、覆盖率 `86%`、重试 `run_no` 递增且不重复扣额、配额 `20/20`）。
+- 2026-09-23 后端 `py_compile` 通过（`PYCOMPILE_OK`），前端 `pnpm run lint && pnpm run build` 通过（退出码 0，预渲染 `/` 与 `/blog/`）。
+- 2026-09-23 修复结构化输出截断缺陷：`generation_ai.py` 增加本地容错（尾随逗号清理 + 未闭合字符串/括号补全）与更严格的修复提示，方案规划输出上限提升至 `2600`；此前 `claude-opus-5` 输出被截断时一次模型修复仍可能失败并中断生成。
+- 2026-09-23 真实 AI 与对象存储验证复跑通过：上传 `200`、回读 `ok: True`、公开地址 `reachable: True`、AI `parse/plan/code` 全部成功（`RESULT storage: True artifacts: True ai: True`）。
+- 2026-09-23 **阻塞项**：`verify_pipeline.py` 复跑时 AI 钱包余额不足（`insufficient_ai_balance`，HTTP `403`），六阶段端到端复跑未能完成；该失败为外部额度问题，非代码缺陷。已验证 `create_project` 在模型不可用时调用 `refund_quota` 退还额度，用户额度不会被白扣，阶段失败会落库为可见失败态。待额度恢复后重跑 `verify_pipeline.py` 即可完成最终端到端确认。
+- 2026-09-23 新增并跑通可靠性用例 `verify_quota_refund.py`：在真实模型失败（`PermissionDeniedError`，余额不足）路径下断言额度回到 `0/20`、残留项目 `0`、残留阶段任务 `0`（`RESULT quota refund: OK`）。即外部模型不可用时用户额度不会被白扣，也不会留下半成品项目；同时该结果反证本地容错修复后 `verify_stage3.py` 的真实 AI 链路已可用（同一环境下解析/规划/代码生成全部成功）。
 - 2026-09-23 更新日志追加 `v0.7.0` 发布记录（`src/data/changelog.ts`）：账号入口、我的项目列表与详情、额度视图、顶栏账号区、登录后回跳聚焦、页脚登录入口移除与登出 500 修复；页面自动置顶并标记 LATEST，类型筛选计数与版本跳转随之更新（当前 33 条、7 个版本）。
 - 2026-09-23 文档同步：`docs/plan.md` 修正阶段一占位页范围（更新日志与登录已替换为真实页面）并补充阶段二交付清单条目；`app/frontend/README.md` 增加发布记录维护约定；根 `README.md` 补充账号体验与最新发布记录；`.wiki.md` 覆盖 `v0.7.0` 发布内容与验证说明。
 

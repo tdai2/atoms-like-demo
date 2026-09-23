@@ -13,6 +13,7 @@ import Projects from './pages/Projects';
 import ProjectDetail from './pages/ProjectDetail';
 import SignIn from './pages/SignIn';
 import SignUp from './pages/SignUp';
+import LogoutCallbackPage from './pages/LogoutCallbackPage';
 // MODULE_IMPORTS_START
 // MODULE_IMPORTS_END
 
@@ -31,6 +32,7 @@ const AppRoutes = () => (
     <Route path="/projects/:id" element={<ProjectDetail />} />
     <Route path="/signin" element={<SignIn />} />
     <Route path="/signup" element={<SignUp />} />
+    <Route path="/logout-callback" element={<LogoutCallbackPage />} />
     <Route path="/billing" element={<Placeholder title="订阅与计费" desc="在线支付与额度管理将在后续版本接入。" />} />
     {/* MODULE_ROUTES_START */}
     {/* MODULE_ROUTES_END */}

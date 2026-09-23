@@ -1,12 +1,10 @@
 import { useEffect } from 'react';
 import { Link, useParams } from 'react-router-dom';
-import { AlertTriangle, ArrowLeft, Loader2, RefreshCw } from 'lucide-react';
+import { AlertTriangle, ArrowLeft, ExternalLink, Loader2, RefreshCw } from 'lucide-react';
 import SiteHeader from '@/components/SiteHeader';
-import MiniApp from '@/components/MiniApp';
 import { useAuthStatus } from '@/hooks/useAuthStatus';
 import { useProjectPipeline, useRetryProject } from '@/hooks/useProjects';
 import { apiErrorMessage, formatDateTime, type ProjectStatus, type StageState } from '@/lib/projects';
-import type { MiniAppKind } from '@/data/site';
 import { cn } from '@/lib/utils';
 
 const STATUS_META: Record<ProjectStatus, { label: string; tone: string }> = {
@@ -16,11 +14,14 @@ const STATUS_META: Record<ProjectStatus, { label: string; tone: string }> = {
   failed: { label: '已失败', tone: 'bg-[rgba(248,113,113,0.14)] text-[#f87171]' },
 };
 
-function pickKind(prompt: string, pages: string[], entities: string[]): MiniAppKind {
-  const text = `${prompt} ${pages.join(' ')} ${entities.join(' ')}`.toLowerCase();
-  if (/商城|电商|商品|订单|结算|购物车/.test(text)) return 'landing';
-  if (/任务|待办|todo|协作|清单/.test(text)) return 'todo';
-  return 'dashboard';
+/** 预览地址只展示主机名，避免把带签名的长链接塞进地址栏。 */
+function previewHost(url: string): string {
+  if (!url) return '';
+  try {
+    return new URL(url).host;
+  } catch {
+    return url.replace(/^https?:\/\//, '').split('/')[0];
+  }
 }
 
 function StageDot({ state }: { state: StageState }) {
@@ -52,7 +53,7 @@ export default function ProjectDetail() {
   const project = pipeline.data?.project;
   const stages = pipeline.data?.stages ?? [];
   const spec = pipeline.data?.spec;
-  const kind = pickKind(project?.prompt ?? '', spec?.pages ?? [], spec?.entities ?? []);
+  const previewUrl = project?.preview_url ?? '';
   const errorMessage = pipeline.isError ? apiErrorMessage(pipeline.error, '项目加载失败') : '';
 
   return (
@@ -144,6 +145,17 @@ export default function ProjectDetail() {
               </div>
 
               <div className="flex items-center gap-2">
+                {previewUrl && (
+                  <a
+                    href={previewUrl}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="focus-ring inline-flex h-10 items-center gap-2 rounded-[10px] border border-[#24272d] px-4 text-[13px] text-[#f2f4f5] transition-colors hover:border-[#3a3f47]"
+                  >
+                    <ExternalLink size={14} />
+                    打开预览
+                  </a>
+                )}
                 {project.status === 'failed' && (
                   <button
                     type="button"
@@ -226,7 +238,7 @@ export default function ProjectDetail() {
                     <span className="h-2.5 w-2.5 rounded-full bg-[#3a3f47]" />
                     <span className="h-2.5 w-2.5 rounded-full bg-[#3a3f47]" />
                     <span className="font-mono-ui ml-2 truncate text-[11px] text-[#6b727c]">
-                      {spec?.app_name ?? 'app'}.atoms.app
+                      {previewHost(previewUrl) || `${spec?.app_name ?? 'app'}.atoms.app`}
                     </span>
                     <span
                       className={cn(
@@ -241,8 +253,13 @@ export default function ProjectDetail() {
                       {project.status === 'succeeded' ? 'ready' : project.status === 'failed' ? 'broken' : 'building'}
                     </span>
                   </div>
-                  {project.status === 'succeeded' ? (
-                    <MiniApp kind={kind} />
+                  {previewUrl ? (
+                    <iframe
+                      title={`${project.name} 预览`}
+                      src={previewUrl}
+                      className="h-[420px] w-full border-0 bg-[#0b0c0e]"
+                      sandbox="allow-scripts allow-forms allow-modals allow-popups"
+                    />
                   ) : (
                     <div className="flex min-h-[260px] flex-col items-center justify-center gap-3 px-6 text-center">
                       {project.status === 'failed' ? (

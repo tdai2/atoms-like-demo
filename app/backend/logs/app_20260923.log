@@ -216,3 +216,284 @@
 2026-09-23 00:16:26,992 - main - INFO - Included router: routers.user.router
 2026-09-23 00:16:26,993 - main - INFO - === Application startup initiated ===
 2026-09-23 00:16:26,993 - main - INFO - === Application startup completed successfully ===
+2026-09-23 00:18:58,284 - main - INFO - === Logging system initialized ===
+2026-09-23 00:18:58,284 - main - INFO - Log file: logs/app_20260923.log
+2026-09-23 00:18:58,284 - main - INFO - Log level: DEBUG
+2026-09-23 00:18:58,284 - main - INFO - Log date: 20260923
+2026-09-23 00:18:58,403 - main - INFO - Included router: routers.aihub.router
+2026-09-23 00:18:59,153 - main - INFO - Included router: routers.auth.router
+2026-09-23 00:18:59,247 - main - INFO - Included router: routers.build_tasks.router
+2026-09-23 00:18:59,276 - main - INFO - Included router: routers.generation.router
+2026-09-23 00:18:59,278 - main - INFO - Included router: routers.health.router
+2026-09-23 00:18:59,303 - main - INFO - Included router: routers.project_versions.router
+2026-09-23 00:18:59,329 - main - INFO - Included router: routers.projects.router
+2026-09-23 00:18:59,339 - main - INFO - Included router: routers.settings.router
+2026-09-23 00:18:59,363 - main - INFO - Included router: routers.storage.router
+2026-09-23 00:18:59,389 - main - INFO - Included router: routers.usage_quotas.router
+2026-09-23 00:18:59,403 - main - INFO - Included router: routers.user.router
+2026-09-23 00:18:59,405 - main - INFO - === Application startup initiated ===
+2026-09-23 00:18:59,405 - main - INFO - === Application startup completed successfully ===
+2026-09-23 00:25:24,544 - main - INFO - === Logging system initialized ===
+2026-09-23 00:25:24,544 - main - INFO - Log file: logs/app_20260923.log
+2026-09-23 00:25:24,544 - main - INFO - Log level: DEBUG
+2026-09-23 00:25:24,544 - main - INFO - Log date: 20260923
+2026-09-23 00:25:24,651 - main - INFO - Included router: routers.aihub.router
+2026-09-23 00:25:25,312 - main - INFO - Included router: routers.auth.router
+2026-09-23 00:25:25,408 - main - INFO - Included router: routers.build_tasks.router
+2026-09-23 00:25:25,463 - main - INFO - Included router: routers.generation.router
+2026-09-23 00:25:25,465 - main - INFO - Included router: routers.health.router
+2026-09-23 00:25:25,489 - main - INFO - Included router: routers.project_versions.router
+2026-09-23 00:25:25,556 - main - INFO - Included router: routers.projects.router
+2026-09-23 00:25:25,571 - main - INFO - Included router: routers.settings.router
+2026-09-23 00:25:25,601 - main - INFO - Included router: routers.storage.router
+2026-09-23 00:25:25,634 - main - INFO - Included router: routers.usage_quotas.router
+2026-09-23 00:25:25,649 - main - INFO - Included router: routers.user.router
+2026-09-23 00:25:25,650 - main - INFO - === Application startup initiated ===
+2026-09-23 00:25:25,650 - main - INFO - === Application startup completed successfully ===
+2026-09-23 00:26:05,827 - main - INFO - === Logging system initialized ===
+2026-09-23 00:26:05,827 - main - INFO - Log file: logs/app_20260923.log
+2026-09-23 00:26:05,827 - main - INFO - Log level: DEBUG
+2026-09-23 00:26:05,828 - main - INFO - Log date: 20260923
+2026-09-23 00:26:05,930 - main - INFO - Included router: routers.aihub.router
+2026-09-23 00:26:06,588 - main - INFO - Included router: routers.auth.router
+2026-09-23 00:26:06,701 - main - INFO - Included router: routers.build_tasks.router
+2026-09-23 00:26:07,061 - main - WARNING - Failed to import module 'routers.generation': cannot import name 'build_spec' from 'services.generation' (/workspace/app/backend/services/generation.py)
+2026-09-23 00:26:07,064 - main - INFO - Included router: routers.health.router
+2026-09-23 00:26:07,092 - main - INFO - Included router: routers.project_versions.router
+2026-09-23 00:26:07,118 - main - INFO - Included router: routers.projects.router
+2026-09-23 00:26:07,130 - main - INFO - Included router: routers.settings.router
+2026-09-23 00:26:07,143 - main - INFO - Included router: routers.storage.router
+2026-09-23 00:26:07,171 - main - INFO - Included router: routers.usage_quotas.router
+2026-09-23 00:26:07,184 - main - INFO - Included router: routers.user.router
+2026-09-23 00:26:07,185 - main - INFO - === Application startup initiated ===
+2026-09-23 00:26:07,186 - main - INFO - === Application startup completed successfully ===
+2026-09-23 00:26:19,631 - main - INFO - === Logging system initialized ===
+2026-09-23 00:26:19,631 - main - INFO - Log file: logs/app_20260923.log
+2026-09-23 00:26:19,631 - main - INFO - Log level: DEBUG
+2026-09-23 00:26:19,631 - main - INFO - Log date: 20260923
+2026-09-23 00:26:19,735 - main - INFO - Included router: routers.aihub.router
+2026-09-23 00:26:20,496 - main - INFO - Included router: routers.auth.router
+2026-09-23 00:26:20,602 - main - INFO - Included router: routers.build_tasks.router
+2026-09-23 00:26:20,909 - main - INFO - Included router: routers.generation.router
+2026-09-23 00:26:20,912 - main - INFO - Included router: routers.health.router
+2026-09-23 00:26:20,939 - main - INFO - Included router: routers.project_versions.router
+2026-09-23 00:26:20,964 - main - INFO - Included router: routers.projects.router
+2026-09-23 00:26:20,975 - main - INFO - Included router: routers.settings.router
+2026-09-23 00:26:20,985 - main - INFO - Included router: routers.storage.router
+2026-09-23 00:26:21,013 - main - INFO - Included router: routers.usage_quotas.router
+2026-09-23 00:26:21,060 - main - INFO - Included router: routers.user.router
+2026-09-23 00:26:21,061 - main - INFO - === Application startup initiated ===
+2026-09-23 00:26:21,061 - main - INFO - === Application startup completed successfully ===
+2026-09-23 00:26:30,419 - main - INFO - === Logging system initialized ===
+2026-09-23 00:26:30,420 - main - INFO - Log file: logs/app_20260923.log
+2026-09-23 00:26:30,420 - main - INFO - Log level: DEBUG
+2026-09-23 00:26:30,420 - main - INFO - Log date: 20260923
+2026-09-23 00:26:30,519 - main - INFO - Included router: routers.aihub.router
+2026-09-23 00:26:31,250 - main - INFO - Included router: routers.auth.router
+2026-09-23 00:26:31,369 - main - INFO - Included router: routers.build_tasks.router
+2026-09-23 00:26:31,841 - main - INFO - Included router: routers.generation.router
+2026-09-23 00:26:31,844 - main - INFO - Included router: routers.health.router
+2026-09-23 00:26:31,867 - main - INFO - Included router: routers.project_versions.router
+2026-09-23 00:26:31,894 - main - INFO - Included router: routers.projects.router
+2026-09-23 00:26:31,912 - main - INFO - Included router: routers.settings.router
+2026-09-23 00:26:31,925 - main - INFO - Included router: routers.storage.router
+2026-09-23 00:26:31,955 - main - INFO - Included router: routers.usage_quotas.router
+2026-09-23 00:26:31,968 - main - INFO - Included router: routers.user.router
+2026-09-23 00:26:31,969 - main - INFO - === Application startup initiated ===
+2026-09-23 00:26:31,970 - main - INFO - === Application startup completed successfully ===
+2026-09-23 00:26:35,327 - main - INFO - === Logging system initialized ===
+2026-09-23 00:26:35,328 - main - INFO - Log file: logs/app_20260923.log
+2026-09-23 00:26:35,328 - main - INFO - Log level: DEBUG
+2026-09-23 00:26:35,328 - main - INFO - Log date: 20260923
+2026-09-23 00:26:35,442 - main - INFO - Included router: routers.aihub.router
+2026-09-23 00:26:36,088 - main - INFO - Included router: routers.auth.router
+2026-09-23 00:26:36,198 - main - INFO - Included router: routers.build_tasks.router
+2026-09-23 00:26:36,510 - main - INFO - Included router: routers.generation.router
+2026-09-23 00:26:36,513 - main - INFO - Included router: routers.health.router
+2026-09-23 00:26:36,535 - main - INFO - Included router: routers.project_versions.router
+2026-09-23 00:26:36,557 - main - INFO - Included router: routers.projects.router
+2026-09-23 00:26:36,569 - main - INFO - Included router: routers.settings.router
+2026-09-23 00:26:36,579 - main - INFO - Included router: routers.storage.router
+2026-09-23 00:26:36,601 - main - INFO - Included router: routers.usage_quotas.router
+2026-09-23 00:26:36,615 - main - INFO - Included router: routers.user.router
+2026-09-23 00:26:36,616 - main - INFO - === Application startup initiated ===
+2026-09-23 00:26:36,617 - main - INFO - === Application startup completed successfully ===
+2026-09-23 00:27:29,293 - main - INFO - === Logging system initialized ===
+2026-09-23 00:27:29,294 - main - INFO - Log file: logs/app_20260923.log
+2026-09-23 00:27:29,294 - main - INFO - Log level: DEBUG
+2026-09-23 00:27:29,294 - main - INFO - Log date: 20260923
+2026-09-23 00:27:29,418 - main - INFO - Included router: routers.aihub.router
+2026-09-23 00:27:30,060 - main - INFO - Included router: routers.auth.router
+2026-09-23 00:27:30,156 - main - INFO - Included router: routers.build_tasks.router
+2026-09-23 00:27:30,478 - main - INFO - Included router: routers.generation.router
+2026-09-23 00:27:30,481 - main - INFO - Included router: routers.health.router
+2026-09-23 00:27:30,506 - main - INFO - Included router: routers.project_versions.router
+2026-09-23 00:27:30,534 - main - INFO - Included router: routers.projects.router
+2026-09-23 00:27:30,547 - main - INFO - Included router: routers.settings.router
+2026-09-23 00:27:30,558 - main - INFO - Included router: routers.storage.router
+2026-09-23 00:27:30,581 - main - INFO - Included router: routers.usage_quotas.router
+2026-09-23 00:27:30,594 - main - INFO - Included router: routers.user.router
+2026-09-23 00:27:30,595 - main - INFO - === Application startup initiated ===
+2026-09-23 00:27:30,595 - main - INFO - === Application startup completed successfully ===
+2026-09-23 00:30:22,107 - main - INFO - === Logging system initialized ===
+2026-09-23 00:30:22,107 - main - INFO - Log file: logs/app_20260923.log
+2026-09-23 00:30:22,107 - main - INFO - Log level: DEBUG
+2026-09-23 00:30:22,107 - main - INFO - Log date: 20260923
+2026-09-23 00:30:22,216 - main - INFO - Included router: routers.aihub.router
+2026-09-23 00:30:23,051 - main - INFO - Included router: routers.auth.router
+2026-09-23 00:30:23,160 - main - INFO - Included router: routers.build_tasks.router
+2026-09-23 00:30:23,516 - main - INFO - Included router: routers.generation.router
+2026-09-23 00:30:23,520 - main - INFO - Included router: routers.health.router
+2026-09-23 00:30:23,545 - main - INFO - Included router: routers.project_versions.router
+2026-09-23 00:30:23,569 - main - INFO - Included router: routers.projects.router
+2026-09-23 00:30:23,583 - main - INFO - Included router: routers.settings.router
+2026-09-23 00:30:23,593 - main - INFO - Included router: routers.storage.router
+2026-09-23 00:30:23,615 - main - INFO - Included router: routers.usage_quotas.router
+2026-09-23 00:30:23,627 - main - INFO - Included router: routers.user.router
+2026-09-23 00:30:23,628 - main - INFO - === Application startup initiated ===
+2026-09-23 00:30:23,628 - main - INFO - === Application startup completed successfully ===
+2026-09-23 00:41:45,709 - main - INFO - === Logging system initialized ===
+2026-09-23 00:41:45,709 - main - INFO - Log file: logs/app_20260923.log
+2026-09-23 00:41:45,709 - main - INFO - Log level: DEBUG
+2026-09-23 00:41:45,709 - main - INFO - Log date: 20260923
+2026-09-23 00:41:45,816 - main - INFO - Included router: routers.aihub.router
+2026-09-23 00:41:46,596 - main - INFO - Included router: routers.auth.router
+2026-09-23 00:41:46,720 - main - INFO - Included router: routers.build_tasks.router
+2026-09-23 00:41:47,001 - main - INFO - Included router: routers.generation.router
+2026-09-23 00:41:47,052 - main - INFO - Included router: routers.health.router
+2026-09-23 00:41:47,076 - main - INFO - Included router: routers.project_versions.router
+2026-09-23 00:41:47,102 - main - INFO - Included router: routers.projects.router
+2026-09-23 00:41:47,117 - main - INFO - Included router: routers.settings.router
+2026-09-23 00:41:47,128 - main - INFO - Included router: routers.storage.router
+2026-09-23 00:41:47,151 - main - INFO - Included router: routers.usage_quotas.router
+2026-09-23 00:41:47,165 - main - INFO - Included router: routers.user.router
+2026-09-23 00:41:47,166 - main - INFO - === Application startup initiated ===
+2026-09-23 00:41:47,166 - main - INFO - === Application startup completed successfully ===
+2026-09-23 00:43:39,430 - main - INFO - === Logging system initialized ===
+2026-09-23 00:43:39,430 - main - INFO - Log file: logs/app_20260923.log
+2026-09-23 00:43:39,430 - main - INFO - Log level: DEBUG
+2026-09-23 00:43:39,430 - main - INFO - Log date: 20260923
+2026-09-23 00:43:39,531 - main - INFO - Included router: routers.aihub.router
+2026-09-23 00:43:40,204 - main - INFO - Included router: routers.auth.router
+2026-09-23 00:43:40,306 - main - INFO - Included router: routers.build_tasks.router
+2026-09-23 00:43:40,578 - main - INFO - Included router: routers.generation.router
+2026-09-23 00:43:40,581 - main - INFO - Included router: routers.health.router
+2026-09-23 00:43:40,601 - main - INFO - Included router: routers.project_versions.router
+2026-09-23 00:43:40,623 - main - INFO - Included router: routers.projects.router
+2026-09-23 00:43:40,634 - main - INFO - Included router: routers.settings.router
+2026-09-23 00:43:40,643 - main - INFO - Included router: routers.storage.router
+2026-09-23 00:43:40,664 - main - INFO - Included router: routers.usage_quotas.router
+2026-09-23 00:43:40,674 - main - INFO - Included router: routers.user.router
+2026-09-23 00:43:40,675 - main - INFO - === Application startup initiated ===
+2026-09-23 00:43:40,675 - main - INFO - === Application startup completed successfully ===
+2026-09-23 00:48:46,044 - main - INFO - === Logging system initialized ===
+2026-09-23 00:48:46,044 - main - INFO - Log file: logs/app_20260923.log
+2026-09-23 00:48:46,044 - main - INFO - Log level: DEBUG
+2026-09-23 00:48:46,044 - main - INFO - Log date: 20260923
+2026-09-23 00:48:46,152 - main - INFO - Included router: routers.aihub.router
+2026-09-23 00:48:46,883 - main - INFO - Included router: routers.auth.router
+2026-09-23 00:48:47,014 - main - INFO - Included router: routers.build_tasks.router
+2026-09-23 00:48:47,355 - main - INFO - Included router: routers.generation.router
+2026-09-23 00:48:47,358 - main - INFO - Included router: routers.health.router
+2026-09-23 00:48:47,381 - main - INFO - Included router: routers.project_versions.router
+2026-09-23 00:48:47,466 - main - INFO - Included router: routers.projects.router
+2026-09-23 00:48:47,481 - main - INFO - Included router: routers.settings.router
+2026-09-23 00:48:47,493 - main - INFO - Included router: routers.storage.router
+2026-09-23 00:48:47,521 - main - INFO - Included router: routers.usage_quotas.router
+2026-09-23 00:48:47,538 - main - INFO - Included router: routers.user.router
+2026-09-23 00:48:47,540 - main - INFO - === Application startup initiated ===
+2026-09-23 00:48:47,540 - main - INFO - === Application startup completed successfully ===
+2026-09-23 00:49:44,808 - main - INFO - === Logging system initialized ===
+2026-09-23 00:49:44,808 - main - INFO - Log file: logs/app_20260923.log
+2026-09-23 00:49:44,808 - main - INFO - Log level: DEBUG
+2026-09-23 00:49:44,808 - main - INFO - Log date: 20260923
+2026-09-23 00:49:44,916 - main - INFO - Included router: routers.aihub.router
+2026-09-23 00:49:45,673 - main - INFO - Included router: routers.auth.router
+2026-09-23 00:49:45,791 - main - INFO - Included router: routers.build_tasks.router
+2026-09-23 00:49:46,101 - main - INFO - Included router: routers.generation.router
+2026-09-23 00:49:46,108 - main - INFO - Included router: routers.health.router
+2026-09-23 00:49:46,139 - main - INFO - Included router: routers.project_versions.router
+2026-09-23 00:49:46,170 - main - INFO - Included router: routers.projects.router
+2026-09-23 00:49:46,184 - main - INFO - Included router: routers.settings.router
+2026-09-23 00:49:46,199 - main - INFO - Included router: routers.storage.router
+2026-09-23 00:49:46,235 - main - INFO - Included router: routers.usage_quotas.router
+2026-09-23 00:49:46,251 - main - INFO - Included router: routers.user.router
+2026-09-23 00:49:46,252 - main - INFO - === Application startup initiated ===
+2026-09-23 00:49:46,252 - main - INFO - === Application startup completed successfully ===
+2026-09-23 00:49:49,535 - main - INFO - === Logging system initialized ===
+2026-09-23 00:49:49,536 - main - INFO - Log file: logs/app_20260923.log
+2026-09-23 00:49:49,536 - main - INFO - Log level: DEBUG
+2026-09-23 00:49:49,536 - main - INFO - Log date: 20260923
+2026-09-23 00:49:49,632 - main - INFO - Included router: routers.aihub.router
+2026-09-23 00:49:50,301 - main - INFO - Included router: routers.auth.router
+2026-09-23 00:49:50,401 - main - INFO - Included router: routers.build_tasks.router
+2026-09-23 00:49:50,755 - main - INFO - Included router: routers.generation.router
+2026-09-23 00:49:50,760 - main - INFO - Included router: routers.health.router
+2026-09-23 00:49:50,787 - main - INFO - Included router: routers.project_versions.router
+2026-09-23 00:49:50,814 - main - INFO - Included router: routers.projects.router
+2026-09-23 00:49:50,826 - main - INFO - Included router: routers.settings.router
+2026-09-23 00:49:50,836 - main - INFO - Included router: routers.storage.router
+2026-09-23 00:49:50,860 - main - INFO - Included router: routers.usage_quotas.router
+2026-09-23 00:49:50,873 - main - INFO - Included router: routers.user.router
+2026-09-23 00:49:50,875 - main - INFO - === Application startup initiated ===
+2026-09-23 00:49:50,875 - main - INFO - === Application startup completed successfully ===
+2026-09-23 00:49:53,498 - main - INFO - === Logging system initialized ===
+2026-09-23 00:49:53,498 - main - INFO - Log file: logs/app_20260923.log
+2026-09-23 00:49:53,499 - main - INFO - Log level: DEBUG
+2026-09-23 00:49:53,499 - main - INFO - Log date: 20260923
+2026-09-23 00:49:53,604 - main - INFO - Included router: routers.aihub.router
+2026-09-23 00:49:54,338 - main - INFO - Included router: routers.auth.router
+2026-09-23 00:49:54,439 - main - INFO - Included router: routers.build_tasks.router
+2026-09-23 00:49:54,754 - main - INFO - Included router: routers.generation.router
+2026-09-23 00:49:54,758 - main - INFO - Included router: routers.health.router
+2026-09-23 00:49:54,783 - main - INFO - Included router: routers.project_versions.router
+2026-09-23 00:49:54,811 - main - INFO - Included router: routers.projects.router
+2026-09-23 00:49:54,826 - main - INFO - Included router: routers.settings.router
+2026-09-23 00:49:54,836 - main - INFO - Included router: routers.storage.router
+2026-09-23 00:49:54,866 - main - INFO - Included router: routers.usage_quotas.router
+2026-09-23 00:49:55,314 - main - INFO - Included router: routers.user.router
+2026-09-23 00:49:55,315 - main - INFO - === Application startup initiated ===
+2026-09-23 00:49:55,315 - main - INFO - === Application startup completed successfully ===
+2026-09-23 00:51:58,462 - dependencies.auth - DEBUG - Authentication required for request GET /api/v1/auth/me
+2026-09-23 00:51:58,465 - dependencies.auth - DEBUG - Authentication required for request GET /api/v1/auth/me
+2026-09-23 00:51:58,469 - dependencies.auth - DEBUG - Authentication required for request GET /api/v1/auth/me
+2026-09-23 00:51:58,471 - dependencies.auth - DEBUG - Authentication required for request GET /api/v1/auth/me
+2026-09-23 00:53:49,813 - main - INFO - === Logging system initialized ===
+2026-09-23 00:53:49,814 - main - INFO - Log file: logs/app_20260923.log
+2026-09-23 00:53:49,814 - main - INFO - Log level: DEBUG
+2026-09-23 00:53:49,814 - main - INFO - Log date: 20260923
+2026-09-23 00:53:49,922 - main - INFO - Included router: routers.aihub.router
+2026-09-23 00:53:50,660 - main - INFO - Included router: routers.auth.router
+2026-09-23 00:53:50,770 - main - INFO - Included router: routers.build_tasks.router
+2026-09-23 00:53:51,142 - main - INFO - Included router: routers.generation.router
+2026-09-23 00:53:51,146 - main - INFO - Included router: routers.health.router
+2026-09-23 00:53:51,175 - main - INFO - Included router: routers.project_versions.router
+2026-09-23 00:53:51,202 - main - INFO - Included router: routers.projects.router
+2026-09-23 00:53:51,218 - main - INFO - Included router: routers.settings.router
+2026-09-23 00:53:51,229 - main - INFO - Included router: routers.storage.router
+2026-09-23 00:53:51,257 - main - INFO - Included router: routers.usage_quotas.router
+2026-09-23 00:53:51,273 - main - INFO - Included router: routers.user.router
+2026-09-23 00:53:51,275 - main - INFO - === Application startup initiated ===
+2026-09-23 00:53:51,275 - main - INFO - === Application startup completed successfully ===
+2026-09-23 00:56:18,190 - main - INFO - === Logging system initialized ===
+2026-09-23 00:56:18,191 - main - INFO - Log file: logs/app_20260923.log
+2026-09-23 00:56:18,191 - main - INFO - Log level: DEBUG
+2026-09-23 00:56:18,191 - main - INFO - Log date: 20260923
+2026-09-23 00:56:18,303 - main - INFO - Included router: routers.aihub.router
+2026-09-23 00:56:18,988 - main - INFO - Included router: routers.auth.router
+2026-09-23 00:56:19,088 - main - INFO - Included router: routers.build_tasks.router
+2026-09-23 00:56:19,384 - main - INFO - Included router: routers.generation.router
+2026-09-23 00:56:19,387 - main - INFO - Included router: routers.health.router
+2026-09-23 00:56:19,410 - main - INFO - Included router: routers.project_versions.router
+2026-09-23 00:56:19,444 - main - INFO - Included router: routers.projects.router
+2026-09-23 00:56:19,455 - main - INFO - Included router: routers.settings.router
+2026-09-23 00:56:19,467 - main - INFO - Included router: routers.storage.router
+2026-09-23 00:56:19,491 - main - INFO - Included router: routers.usage_quotas.router
+2026-09-23 00:56:19,502 - main - INFO - Included router: routers.user.router
+2026-09-23 00:56:19,504 - main - INFO - === Application startup initiated ===
+2026-09-23 00:56:19,504 - main - INFO - === Application startup completed successfully ===
+2026-09-23 00:56:32,756 - dependencies.auth - DEBUG - Authentication required for request GET /api/v1/generation/projects
+2026-09-23 00:57:29,409 - dependencies.auth - DEBUG - Authentication required for request GET /api/v1/auth/me
+2026-09-23 00:57:29,414 - dependencies.auth - DEBUG - Authentication required for request GET /api/v1/auth/me
+2026-09-23 00:57:29,416 - dependencies.auth - DEBUG - Authentication required for request GET /api/v1/auth/me
+2026-09-23 00:57:29,418 - dependencies.auth - DEBUG - Authentication required for request GET /api/v1/auth/me

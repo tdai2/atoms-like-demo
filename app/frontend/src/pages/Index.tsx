@@ -2,7 +2,6 @@ import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowRight, Check, Play, Loader2, AlertTriangle } from 'lucide-react';
 import SiteHeader from '@/components/SiteHeader';
-import MiniApp from '@/components/MiniApp';
 import {
   BUILD_STEPS,
   CAPABILITIES,
@@ -10,21 +9,12 @@ import {
   PROMPT_PRESETS,
   TEMPLATES,
   TEMPLATE_CATEGORIES,
-  type MiniAppKind,
 } from '@/data/site';
 import { cn } from '@/lib/utils';
 import { useAuthStatus } from '@/hooks/useAuthStatus';
 import { useCreateProject, useProjectPipeline } from '@/hooks/useProjects';
 import { apiErrorMessage, type StageState } from '@/lib/projects';
 import { consumeStartFreeIntent, onStartFreeFocus, peekStartFreeIntent } from '@/lib/startFree';
-
-/** 依据服务端方案（页面与实体）决定预览窗渲染哪种迷你应用。 */
-function pickKind(prompt: string, pages: string[], entities: string[]): MiniAppKind {
-  const text = `${prompt} ${pages.join(' ')} ${entities.join(' ')}`.toLowerCase();
-  if (/商城|电商|商品|订单|结算|购物车|落地页|官网|品牌/.test(text)) return 'landing';
-  if (/任务|待办|todo|协作|清单/.test(text)) return 'todo';
-  return 'dashboard';
-}
 
 function Wireframe({ wire, accent }: { wire: string; accent: string }) {
   return (
@@ -142,7 +132,9 @@ export default function Index() {
       ? apiErrorMessage(pipeline.error, '任务状态读取失败')
       : '';
 
-  const previewKind: MiniAppKind = pickKind(input || project?.prompt || '', spec?.pages ?? [], spec?.entities ?? []);
+  // 预览地址来自服务端真实产物，仅展示主机名，避免把签名链接塞进地址栏。
+  const previewUrl = project?.preview_url ?? '';
+  const previewHost = previewUrl ? previewUrl.replace(/^https?:\/\//, '').split('/')[0] : '';
   const filtered = category === '全部' ? TEMPLATES : TEMPLATES.filter((t) => t.category === category);
 
   return (
@@ -268,7 +260,7 @@ export default function Index() {
                   <span className="h-2.5 w-2.5 rounded-full bg-[#3a3f47]" />
                   <span className="h-2.5 w-2.5 rounded-full bg-[#3a3f47]" />
                   <span className="font-mono-ui ml-2 truncate text-[11px] text-[#6b727c]">
-                    {spec?.app_name ?? 'app'}.atoms.app
+                    {previewHost || '等待生成预览'}
                   </span>
                   <span
                     className={cn(
@@ -295,8 +287,20 @@ export default function Index() {
                       <AlertTriangle size={22} className="text-[#f87171]" />
                       <p className="font-mono-ui text-[12px] text-[#a0a6af]">生成中断，可在项目详情页重试</p>
                     </div>
+                  ) : previewUrl ? (
+                    <iframe
+                      title={`${spec?.display_name ?? '应用'} 预览`}
+                      src={previewUrl}
+                      className="h-[380px] w-full border-0 bg-[#0b0c0e]"
+                      sandbox="allow-scripts allow-forms allow-modals allow-popups"
+                    />
                   ) : (
-                    <MiniApp kind={previewKind} />
+                    <div className="flex min-h-[300px] flex-col items-center justify-center gap-2 px-6 text-center">
+                      <p className="font-mono-ui text-[12px] text-[#a0a6af]">输入需求后开始生成真实应用</p>
+                      <p className="text-[12px] leading-[1.6] text-[#6b727c]">
+                        完成后这里直接加载生成产物的可访问地址
+                      </p>
+                    </div>
                   )}
                 </div>
                 {phase === 'done' && testReport.length > 0 && (
@@ -323,7 +327,7 @@ export default function Index() {
                 </div>
               </div>
               <p className="mt-3 text-[12px] leading-[1.6] text-[#6b727c]">
-                预览窗中的界面由真实组件渲染，生成后可继续在对话中追加需求。
+                预览窗直接加载生成产物的真实地址，生成完成后可在窗内交互。
               </p>
             </div>
           </div>
