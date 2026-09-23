@@ -75,6 +75,7 @@ pnpm run build    # 生产构建，含 / 与 /blog/ 预渲染
 - 视觉以 `DESIGN.md` 为唯一规范：暗色为唯一主题，主色 `#C8F751` 占比不超过 10%，不使用蓝紫渐变。
 - `index.html` 中的标题、描述与 logo 由概览系统通过 `data-mgx-overview` 标记管理，不手动修改。
 - `src/pages/AuthCallback.tsx` 为平台只读文件，不做修改。
+- 发布记录集中在 `src/data/changelog.ts`：新增版本时在数组顶部追加一条 `Release`，页面会自动置顶并标记 `LATEST`，类型筛选计数与版本跳转同步更新；当前最新为 `v0.7.0`（账号体系与项目持久化）。
 
 ## 后续阶段
 

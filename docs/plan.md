@@ -142,7 +142,7 @@
 | 生成任务同步还是异步 | 异步 + 轮询 | 生成耗时长，同步请求会超时且无法展示过程 |
 | 预览窗形态 | 当前真实组件渲染，接入后改 iframe | 演示形态下更可信，接入后自然过渡到真实部署 |
 | 模板缩略图 | CSS 线框 | 避免无意义配图，保持工程风一致 |
-| 生成动画 | 定时状态机（演示期） | 首屏内容初始可见，不依赖滚动或观察器 |
+| 生成推进方式 | 阶段一为定时状态机，阶段二起改为服务端阶段状态 + 前端轮询 | 演示期无需后端；接入后过程可查询、刷新不丢失 |
 | 是否自建管理后台登录 | 否 | 用账号角色区分权限，不做第二套认证 |
 | 产物是否入库 | 否，存对象存储 | 避免大字段拖垮数据库性能 |
 
@@ -166,8 +166,10 @@
 | 六阶段生成时间线与定时推进状态机 | `app/frontend/src/pages/Index.tsx`、`src/data/site.ts` |
 | 应用预览窗与测试报告面板 | `src/components/MiniApp.tsx`、`src/data/site.ts` |
 | 能力介绍、模板库与分类筛选、定价、CTA | `src/pages/Index.tsx`、`src/data/site.ts` |
-| 次级占位页（模板详情、文档、更新日志、登录、计费） | `src/pages/Placeholder.tsx`、`src/App.tsx` |
+| 次级占位页（模板详情、文档、计费） | `src/pages/Placeholder.tsx`、`src/App.tsx` |
 | 暗色工程风设计系统与动效、可访问性 | `src/index.css`、`DESIGN.md` |
+
+阶段一的占位页中，「更新日志」与「登录」已在阶段二替换为真实页面，占位页只保留模板详情、文档中心与计费三处。
 
 验证方式：`pnpm run lint` 与 `pnpm run build` 均通过；首页与 `/blog/` 完成预渲染。
 
@@ -183,6 +185,8 @@
 | 我的项目列表页（加载 / 未登录 / 空列表 / 失败重试 / 成功列表） | `src/pages/Projects.tsx` |
 | 项目详情页（流水线快照、方案、测试报告、失败重试） | `src/pages/ProjectDetail.tsx` |
 | 首页生成链路改为创建任务 + 轮询服务端阶段状态 | `src/pages/Index.tsx` |
+| 更新日志页与发布记录数据源（最新 `v0.7.0` 覆盖账号与项目持久化） | `src/pages/Changelog.tsx`、`src/data/changelog.ts` |
+| 顶栏账号区（登录 / 免费开始 / 账号邮箱 / 退出登录）与登出降级 | `src/components/SiteHeader.tsx`、`src/hooks/useAuthStatus.ts`、`app/backend/routers/auth.py` |
 
 验证方式：后端 Python 语法检查通过；`pnpm run lint` 与 `pnpm run build` 通过。
 
