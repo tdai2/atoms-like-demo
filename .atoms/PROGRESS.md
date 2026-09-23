@@ -26,6 +26,7 @@ last_updated: 2026-09-22T07:20:00Z
 | P1-5 | 能力介绍、模板库与分类筛选、模板详情占位 | Alex | done | P1-1 |
 | P1-6 | 定价区块与次级占位页（文档/登录/计费/更新日志） | Alex | done | P1-1 |
 | P1-7 | 设计系统落地：暗色工程风 tokens、网格背景、动效与可访问性 | Alex | done | P1-1 |
+| P1-8 | 更新日志页：发布记录数据源、类型筛选与版本跳转 | Alex | done | P1-1 |
 | V1-1 | Lint 与生产构建验证 | Alex | done | P1-7 |
 | V1-2 | 界面渲染与生成链路验证 | Alex | done | V1-1 |
 
@@ -39,4 +40,5 @@ last_updated: 2026-09-22T07:20:00Z
 - 2026-09-22 对齐 `docs/plan.md` 六阶段流水线：新增「测试验证」步骤与生成完成后的测试报告面板。
 - 2026-09-22 `pnpm run lint && pnpm run build` 通过（退出码 0）。
 - 2026-09-22 同步文档至阶段一交付状态：`docs/mission.md` 范围表、`docs/plan.md` 实施计划与阶段一交付清单、根 `README.md` 与 `app/frontend/README.md`。
+- 2026-09-22 将 `/changelog` 从占位页替换为真实更新日志页：新增 `src/data/changelog.ts` 发布记录与 `src/pages/Changelog.tsx`（类型筛选、版本锚点跳转、时间线）。
 - 待办：阶段二起激活 Atoms Cloud 后端，落地账号、项目表与生成接口。

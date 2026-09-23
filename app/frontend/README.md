@@ -11,7 +11,7 @@
 | `/auth/callback`、`/auth/error` | 认证回调与错误处理入口 | 已实现 |
 | `/templates/:id` | 模板详情 | 建设中说明页 |
 | `/docs` | 文档中心 | 建设中说明页 |
-| `/changelog` | 更新日志 | 建设中说明页 |
+| `/changelog` | 更新日志：平台发布记录，按类型筛选与版本跳转 | 已实现 |
 | `/signin` | 登录 | 建设中说明页 |
 | `/billing` | 订阅与计费 | 建设中说明页 |
 
@@ -25,7 +25,9 @@
 | `src/components/MiniApp.tsx` | 三类迷你应用（增长看板 / 品牌落地页 / 团队待办）的真实 DOM 渲染 |
 | `src/components/SiteHeader.tsx` | 粘性顶栏与移动端菜单 |
 | `src/pages/Placeholder.tsx` | 未建设模块的统一说明页，模板详情复用 |
+| `src/pages/Changelog.tsx` | 更新日志页：类型筛选、版本锚点跳转与发布记录时间线 |
 | `src/data/site.ts` | 预设提示词、六阶段步骤与测试报告、模板、能力、定价 |
+| `src/data/changelog.ts` | 平台发布记录数据源，按版本倒序，仅含呈现所需字段 |
 | `src/lib/api.ts` | 预留的后端访问边界，阶段一未接入 |
 | `src/index.css` | 设计令牌、网格背景、动效与 `prefers-reduced-motion` 处理 |
 | `DESIGN.md` | 视觉规范来源，实现须服从该文档 |
