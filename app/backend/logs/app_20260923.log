@@ -1,0 +1,101 @@
+2026-09-23 00:01:37,566 - main - INFO - === Logging system initialized ===
+2026-09-23 00:01:37,566 - main - INFO - Log file: logs/app_20260923.log
+2026-09-23 00:01:37,566 - main - INFO - Log level: DEBUG
+2026-09-23 00:01:37,566 - main - INFO - Log date: 20260923
+2026-09-23 00:01:37,684 - main - INFO - Included router: routers.aihub.router
+2026-09-23 00:01:38,669 - main - INFO - Included router: routers.auth.router
+2026-09-23 00:01:38,882 - main - INFO - Included router: routers.build_tasks.router
+2026-09-23 00:01:38,909 - main - INFO - Included router: routers.generation.router
+2026-09-23 00:01:38,951 - main - INFO - Included router: routers.health.router
+2026-09-23 00:01:38,976 - main - INFO - Included router: routers.project_versions.router
+2026-09-23 00:01:39,001 - main - INFO - Included router: routers.projects.router
+2026-09-23 00:01:39,011 - main - INFO - Included router: routers.settings.router
+2026-09-23 00:01:39,072 - main - INFO - Included router: routers.storage.router
+2026-09-23 00:01:39,166 - main - INFO - Included router: routers.usage_quotas.router
+2026-09-23 00:01:39,185 - main - INFO - Included router: routers.user.router
+2026-09-23 00:01:39,187 - main - INFO - === Application startup initiated ===
+2026-09-23 00:01:39,187 - main - INFO - === Application startup completed successfully ===
+2026-09-23 00:04:33,982 - main - INFO - === Logging system initialized ===
+2026-09-23 00:04:33,982 - main - INFO - Log file: logs/app_20260923.log
+2026-09-23 00:04:33,982 - main - INFO - Log level: DEBUG
+2026-09-23 00:04:33,982 - main - INFO - Log date: 20260923
+2026-09-23 00:04:34,126 - main - INFO - Included router: routers.aihub.router
+2026-09-23 00:04:34,928 - main - INFO - Included router: routers.auth.router
+2026-09-23 00:04:35,079 - main - INFO - Included router: routers.build_tasks.router
+2026-09-23 00:04:35,104 - main - INFO - Included router: routers.generation.router
+2026-09-23 00:04:35,107 - main - INFO - Included router: routers.health.router
+2026-09-23 00:04:35,131 - main - INFO - Included router: routers.project_versions.router
+2026-09-23 00:04:35,154 - main - INFO - Included router: routers.projects.router
+2026-09-23 00:04:35,164 - main - INFO - Included router: routers.settings.router
+2026-09-23 00:04:35,183 - main - INFO - Included router: routers.storage.router
+2026-09-23 00:04:35,206 - main - INFO - Included router: routers.usage_quotas.router
+2026-09-23 00:04:35,219 - main - INFO - Included router: routers.user.router
+2026-09-23 00:04:35,220 - main - INFO - === Application startup initiated ===
+2026-09-23 00:04:35,221 - main - INFO - === Application startup completed successfully ===
+2026-09-23 00:04:37,678 - dependencies.auth - DEBUG - Authentication required for request GET /api/v1/auth/me
+2026-09-23 00:04:37,683 - dependencies.auth - DEBUG - Authentication required for request GET /api/v1/auth/me
+2026-09-23 00:04:37,686 - dependencies.auth - DEBUG - Authentication required for request GET /api/v1/auth/me
+2026-09-23 00:04:37,691 - dependencies.auth - DEBUG - Authentication required for request GET /api/v1/auth/me
+2026-09-23 00:04:37,751 - dependencies.auth - DEBUG - Authentication required for request GET /api/v1/auth/me
+2026-09-23 00:04:37,758 - dependencies.auth - DEBUG - Authentication required for request GET /api/v1/auth/me
+2026-09-23 00:04:37,763 - dependencies.auth - DEBUG - Authentication required for request GET /api/v1/auth/me
+2026-09-23 00:04:41,650 - core.config - DEBUG - Read dynamic attribute frontend_url from environment variable FRONTEND_URL
+2026-09-23 00:04:41,650 - core.config - DEBUG - Read dynamic attribute oidc_issuer_url from environment variable OIDC_ISSUER_URL
+2026-09-23 00:06:17,621 - main - INFO - === Logging system initialized ===
+2026-09-23 00:06:17,621 - main - INFO - Log file: logs/app_20260923.log
+2026-09-23 00:06:17,622 - main - INFO - Log level: DEBUG
+2026-09-23 00:06:17,622 - main - INFO - Log date: 20260923
+2026-09-23 00:06:17,722 - main - INFO - Included router: routers.aihub.router
+2026-09-23 00:06:18,852 - main - INFO - Included router: routers.auth.router
+2026-09-23 00:06:19,081 - main - INFO - Included router: routers.build_tasks.router
+2026-09-23 00:06:19,166 - main - INFO - Included router: routers.generation.router
+2026-09-23 00:06:19,171 - main - INFO - Included router: routers.health.router
+2026-09-23 00:06:19,263 - main - INFO - Included router: routers.project_versions.router
+2026-09-23 00:06:19,584 - main - INFO - Included router: routers.projects.router
+2026-09-23 00:06:19,599 - main - INFO - Included router: routers.settings.router
+2026-09-23 00:06:19,628 - main - INFO - Included router: routers.storage.router
+2026-09-23 00:06:19,656 - main - INFO - Included router: routers.usage_quotas.router
+2026-09-23 00:06:19,670 - main - INFO - Included router: routers.user.router
+2026-09-23 00:06:19,672 - main - INFO - === Application startup initiated ===
+2026-09-23 00:06:19,672 - main - INFO - === Application startup completed successfully ===
+2026-09-23 00:06:21,092 - dependencies.auth - DEBUG - Authentication required for request GET /api/v1/auth/me
+2026-09-23 00:06:21,152 - dependencies.auth - DEBUG - Authentication required for request GET /api/v1/auth/me
+2026-09-23 00:06:21,158 - dependencies.auth - DEBUG - Authentication required for request GET /api/v1/auth/me
+2026-09-23 00:06:21,163 - dependencies.auth - DEBUG - Authentication required for request GET /api/v1/auth/me
+2026-09-23 00:06:21,177 - dependencies.auth - DEBUG - Authentication required for request GET /api/v1/auth/me
+2026-09-23 00:06:21,182 - dependencies.auth - DEBUG - Authentication required for request GET /api/v1/auth/me
+2026-09-23 00:06:21,187 - dependencies.auth - DEBUG - Authentication required for request GET /api/v1/auth/me
+2026-09-23 00:06:38,381 - main - INFO - === Logging system initialized ===
+2026-09-23 00:06:38,381 - main - INFO - Log file: logs/app_20260923.log
+2026-09-23 00:06:38,381 - main - INFO - Log level: DEBUG
+2026-09-23 00:06:38,381 - main - INFO - Log date: 20260923
+2026-09-23 00:06:38,475 - main - INFO - Included router: routers.aihub.router
+2026-09-23 00:06:39,096 - main - INFO - Included router: routers.auth.router
+2026-09-23 00:06:39,196 - main - INFO - Included router: routers.build_tasks.router
+2026-09-23 00:06:39,230 - main - INFO - Included router: routers.generation.router
+2026-09-23 00:06:39,233 - main - INFO - Included router: routers.health.router
+2026-09-23 00:06:39,264 - main - INFO - Included router: routers.project_versions.router
+2026-09-23 00:06:39,291 - main - INFO - Included router: routers.projects.router
+2026-09-23 00:06:39,305 - main - INFO - Included router: routers.settings.router
+2026-09-23 00:06:39,334 - main - INFO - Included router: routers.storage.router
+2026-09-23 00:06:39,358 - main - INFO - Included router: routers.usage_quotas.router
+2026-09-23 00:06:39,373 - main - INFO - Included router: routers.user.router
+2026-09-23 00:06:39,375 - main - INFO - === Application startup initiated ===
+2026-09-23 00:06:39,375 - main - INFO - === Application startup completed successfully ===
+2026-09-23 00:06:39,388 - dependencies.auth - DEBUG - Authentication required for request GET /api/v1/auth/me
+2026-09-23 00:06:39,389 - dependencies.auth - DEBUG - Authentication required for request GET /api/v1/auth/me
+2026-09-23 00:06:39,394 - dependencies.auth - DEBUG - Authentication required for request GET /api/v1/auth/me
+2026-09-23 00:06:39,394 - dependencies.auth - DEBUG - Authentication required for request GET /api/v1/auth/me
+2026-09-23 00:06:39,399 - dependencies.auth - DEBUG - Authentication required for request GET /api/v1/auth/me
+2026-09-23 00:06:39,399 - dependencies.auth - DEBUG - Authentication required for request GET /api/v1/auth/me
+2026-09-23 00:06:39,404 - dependencies.auth - DEBUG - Authentication required for request GET /api/v1/auth/me
+2026-09-23 00:06:58,185 - dependencies.auth - DEBUG - Authentication required for request GET /api/v1/auth/me
+2026-09-23 00:06:58,189 - dependencies.auth - DEBUG - Authentication required for request GET /api/v1/auth/me
+2026-09-23 00:06:58,193 - dependencies.auth - DEBUG - Authentication required for request GET /api/v1/auth/me
+2026-09-23 00:06:58,197 - dependencies.auth - DEBUG - Authentication required for request GET /api/v1/auth/me
+2026-09-23 00:07:14,549 - core.config - DEBUG - Read dynamic attribute frontend_url from environment variable FRONTEND_URL
+2026-09-23 00:07:14,550 - core.config - DEBUG - Read dynamic attribute oidc_issuer_url from environment variable OIDC_ISSUER_URL
+2026-09-23 00:07:24,236 - dependencies.auth - DEBUG - Authentication required for request GET /api/v1/auth/me
+2026-09-23 00:07:24,240 - dependencies.auth - DEBUG - Authentication required for request GET /api/v1/auth/me
+2026-09-23 00:07:24,243 - dependencies.auth - DEBUG - Authentication required for request GET /api/v1/auth/me
+2026-09-23 00:07:24,246 - dependencies.auth - DEBUG - Authentication required for request GET /api/v1/auth/me

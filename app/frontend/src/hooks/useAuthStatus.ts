@@ -47,11 +47,20 @@ export function useAuthStatus() {
     client.auth.toLogin();
   }, []);
 
-  /** 登出：SDK 会清除本地令牌并跳回首页，先本地复位避免顶栏残留登录态。 */
+  /**
+   * 登出：SDK 会清除本地令牌并跳回首页，先本地复位避免顶栏残留登录态。
+   * 平台登出接口异常时不能让登出卡住：令牌已被 SDK 清除，这里兜底回到首页。
+   */
   const logout = useCallback(async () => {
     setUser(null);
     setState('anonymous');
-    await client.auth.logout();
+    try {
+      await client.auth.logout();
+    } catch {
+      if (typeof window !== 'undefined' && window.location.pathname !== '/') {
+        window.location.assign('/');
+      }
+    }
   }, []);
 
   return { state, user, login, logout, refresh };

@@ -488,9 +488,6 @@ export default function Index() {
               <Link to="/changelog" className="transition-colors hover:text-[#f2f4f5]">
                 更新日志
               </Link>
-              <Link to="/signin" className="transition-colors hover:text-[#f2f4f5]">
-                登录
-              </Link>
             </div>
           </div>
         </div>

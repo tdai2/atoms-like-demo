@@ -332,8 +332,18 @@ async def get_current_user_info(current_user: UserResponse = Depends(get_current
     return current_user
 
 
-@router.get("/logout")
+@router.api_route("/logout", methods=["GET", "POST"])
 async def logout():
-    """Logout user."""
-    logout_url = build_logout_url()
-    return {"redirect_url": logout_url}
+    """登出接口。
+
+    前端 SDK 通过 GET 调用，并自行清理本地令牌，响应体中的跳转地址仅作参考。
+    因此这里必须保持稳定：登出地址构造失败（例如平台登出配置缺失）时降级返回空地址，
+    避免登录态已经清理却因为 500 让前端停留在原页面。
+    """
+    try:
+        redirect_url = build_logout_url()
+    except Exception as exc:  # noqa: BLE001 - 登出不应因为地址构造失败而中断
+        logger.warning("[logout] Failed to build platform logout url: %s", exc, exc_info=True)
+        redirect_url = ""
+
+    return {"redirect_url": redirect_url}
