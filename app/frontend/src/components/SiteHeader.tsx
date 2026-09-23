@@ -7,6 +7,7 @@ const NAV = [
   { label: '模板库', href: '/#templates' },
   { label: '定价', href: '/#pricing' },
   { label: '文档', to: '/docs' },
+  { label: '更新日志', to: '/changelog' },
 ];
 
 export default function SiteHeader() {

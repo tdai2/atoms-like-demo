@@ -16,6 +16,7 @@ Vite + React + TypeScript + Tailwind CSS + shadcn/ui + react-router-dom + lucide
 | 顶栏 | 粘性导航与移动端菜单 | src/components/SiteHeader.tsx |
 | 预览应用 | 三种迷你应用（看板/落地页/待办）真实 DOM 渲染 | src/components/MiniApp.tsx |
 | 占位页 | 未建设模块的统一提示，模板详情复用 | src/pages/Placeholder.tsx |
+| 更新日志 | 平台发布记录与类型筛选、版本跳转 | src/pages/Changelog.tsx, src/data/changelog.ts |
 | 静态数据 | 预设提示词、构建步骤、模板、能力、定价 | src/data/site.ts |
 | 设计系统 | 颜色/字体/网格背景/动效 | src/index.css, DESIGN.md |
 
@@ -37,7 +38,9 @@ src/
   components/SiteHeader.tsx
   components/MiniApp.tsx
   pages/Index.tsx
+  pages/Changelog.tsx
   pages/Placeholder.tsx
+  data/changelog.ts
 DESIGN.md
 ```
 
