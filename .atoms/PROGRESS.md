@@ -69,6 +69,7 @@ last_updated: 2026-09-22T07:20:00Z
 | V3-1 | 真实 AI 与对象存储验证：上传 `200`、回读成功、预览地址 `200`、无 iframe 阻断头（`verify_stage3.py`） | Alex | done | P3-5 |
 | V3-2 | 六阶段流水线验证：状态 `succeeded`、结构校验 `5/5`、冒烟 `4/4`、覆盖率 `86%`、重试 `run_no` 递增不重复扣额（`verify_pipeline.py`） | Alex | done | V3-1 |
 | V3-3 | 后端语法检查（`py_compile`）与前端 `pnpm run lint && pnpm run build` | Alex | done | P3-6 |
+| P3-8 | 文档归档：前端开发文档与更新日志文档迁入 `docs/`（`docs/frontend.md`、`docs/changelog.md`），根 README、`.wiki.md` 与 `.atoms/ARCHITECTURE.md` 索引同步 | Alex | done | V3-3 |
 
 ## Progress Log
 
@@ -121,3 +122,5 @@ last_updated: 2026-09-22T07:20:00Z
 - 2026-09-23 文档同步收尾：清除文档内最后残留的过期表述（`.atoms/ARCHITECTURE.md` 文件树中已删除的模拟预览组件、`.wiki.md` 目录树中误列为后端根文件的后台工作器、`.atoms/PROGRESS.md` 中「可访问地址写入 `projects.preview_url`」的旧描述），并修正 `services/generation_artifacts.py` 模块与函数注释为真实行为（业务表只存对象键 `artifact_key`，访问地址按对象键即时解析、不落库）；注释改动后 `python -m py_compile services/generation_artifacts.py` 通过（`PYCOMPILE_OK`）。决策表中「阶段二 `preview_url` 留空」「阶段一用本地定时状态机」等历史行按约定保留原文，不改写历史，现状统一由概览段与新增决策行表达。
 
 - 2026-09-23 新增后端开发文档 `docs/backend.md`：逐项对齐实际实现，覆盖技术栈与运行形态、目录职责与路由自动发现、生命周期与本地自测、全部环境变量、OIDC+PKCE 登录链路与应用 JWT 鉴权、数据库连接池策略与事务边界硬性规范、六张表数据模型、六阶段流水线与三段式阶段执行/后台工作器/配额退款/重试/测试报告口径、全量 API 清单（生成、认证、用户、实体 CRUD、AI、对象存储、管理健康）、AI 调用约定（模型、180 秒硬超时、异常收敛、JSON 容错）、对象存储产物链路、502/524 根因与修复对照表、幂等恢复、验证脚本清单与开发规范要点；根 `README.md` 目录规划与文档索引同步加入该文档。
+
+- 2026-09-23 文档归档完成（本轮，纯文档轮次不做构建）：新增 `docs/frontend.md`，以实际代码为准逐项对齐前端技术栈、`App.tsx` 路由表、博客构建期预渲染（`/blog/*` 的 SPA 路由有意注释、`prerender/blog.js` 渲染、原生 `<a>` 跳转）、关键文件清单、生成链路七步、`src/lib/projects.ts` 六个接口契约与 `PIPELINE_TIMEOUT_MS = 60_000`、轮询间隔 `1500ms` 与网关瞬时错误分类/指数退避上限 `4` 次、认证三态与登出降级、视觉与工程约定（`DESIGN.md`、`AuthCallback.tsx` 只读、`data-mgx-overview`）、`vite.config.ts` 的代理与分包/预渲染行为、命令与验收要求；新增 `docs/changelog.md`，完整保留 `v0.7.0`～`v0.1.0` 共 7 个版本 33 条变更（版本、日期、标题、摘要、标签、类型条目），并明确该文档是平台发布记录、与用户生成项目的版本历史（`project_versions` / `GET /projects/{id}/versions`）是两个不同对象。同步位置：根 `README.md` 目录规划与文档索引新增两份文档，并标注 `app/frontend/README.md` 降为简明入口、完整说明以 `docs/frontend.md` 为准；`.wiki.md` 目录树与文件清单新增两份文档；`.atoms/ARCHITECTURE.md` 文件树 `docs/` 行补齐。统一口径保持：预览地址按对象键即时解析、不落库；阶段状态 `pending/running/done/failed`；项目状态 `queued/pending/running/succeeded/failed`。

@@ -39,7 +39,9 @@ atoms_demo/
 ├── docs/
 │   ├── mission.md    # 顶层纲领：使命、原则、边界、范围
 │   ├── plan.md       # 工程方案：架构、模块、技术选型、实施阶段
-│   └── backend.md    # 后端开发文档：分层结构、认证、事务边界、流水线、API、存储、部署
+│   ├── frontend.md   # 前端开发文档：技术栈、路由、关键文件、生成链路、认证、构建配置
+│   ├── backend.md    # 后端开发文档：分层结构、认证、事务边界、流水线、API、存储、部署
+│   └── changelog.md  # 平台发布记录：与 /changelog 页面同源的版本历史
 ├── app/
 │   ├── frontend/     # 前端 SPA（输入台、时间线、预览窗、我的项目）
 │   └── backend/      # Atoms Cloud 后端（认证、项目、任务、版本、配额）
@@ -94,8 +96,10 @@ python verify_gateway_timeout.py  # 创建/轮询耗时与并发
 |------|------|
 | [docs/mission.md](docs/mission.md) | 产品使命、原则、目标用户、项目范围、成功定义、不做什么 |
 | [docs/plan.md](docs/plan.md) | 分层架构、状态模型、数据模型、模块划分、技术选型、实施阶段与阶段一交付清单 |
-| [app/frontend/DESIGN.md](app/frontend/DESIGN.md) | 视觉规范：色彩令牌、字体、间距圆角、组件状态、动效与可访问性 |
-| [app/frontend/README.md](app/frontend/README.md) | 前端路由、关键文件、生成演示链路与开发说明 |
+| [docs/frontend.md](docs/frontend.md) | 前端开发文档：技术栈、路由表与博客预渲染、关键文件、生成链路与接口契约、轮询与错误处理、认证、视觉与工程约定、构建配置 |
 | [docs/backend.md](docs/backend.md) | 后端开发文档：目录结构、认证与授权、数据库与事务边界、六阶段生成流水线、API 清单、AI 与对象存储、可靠性与部署约束 |
+| [docs/changelog.md](docs/changelog.md) | 平台发布记录：`v0.7.0` 至 `v0.1.0` 的版本、日期、摘要、标签与变更条目 |
+| [app/frontend/DESIGN.md](app/frontend/DESIGN.md) | 视觉规范：色彩令牌、字体、间距圆角、组件状态、动效与可访问性 |
+| [app/frontend/README.md](app/frontend/README.md) | 前端简明入口：路由与关键文件速览，完整说明以 `docs/frontend.md` 为准 |
 
 所有技术决策服从 `docs/mission.md` 的方向与边界。

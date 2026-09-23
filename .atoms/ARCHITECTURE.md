@@ -87,7 +87,7 @@ app/backend/
   services/                   # generation, pipeline_runner, generation_ai, generation_artifacts, storage
   verify_*.py                 # stage3 / pipeline / quota_refund / gateway_timeout
 docs/
-  mission.md  plan.md  backend.md
+  mission.md  plan.md  frontend.md  backend.md  changelog.md
 ```
 
 ## Implementation Guide
