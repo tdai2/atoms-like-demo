@@ -37,7 +37,7 @@ export const PROMPT_PRESETS: PromptPreset[] = [
 ];
 
 export interface BuildStep {
-  id: string;
+  id: 'parse' | 'plan' | 'code' | 'build' | 'test' | 'deploy';
   title: string;
   detail: string;
 }
@@ -47,7 +47,21 @@ export const BUILD_STEPS: BuildStep[] = [
   { id: 'plan', title: '生成方案', detail: '选择技术栈与组件层级' },
   { id: 'code', title: '编写代码', detail: '生成 React 组件与样式' },
   { id: 'build', title: '构建校验', detail: '类型检查与依赖安装' },
+  { id: 'test', title: '测试验证', detail: '运行单元与冒烟用例' },
   { id: 'deploy', title: '发布预览', detail: '部署到临时预览域名' },
+];
+
+export interface TestResult {
+  id: string;
+  label: string;
+  value: string;
+  passed: boolean;
+}
+
+export const TEST_RESULTS: TestResult[] = [
+  { id: 'unit', label: '单元用例', value: '24 / 24', passed: true },
+  { id: 'smoke', label: '冒烟用例', value: '6 / 6', passed: true },
+  { id: 'coverage', label: '语句覆盖率', value: '82%', passed: true },
 ];
 
 export interface TemplateItem {

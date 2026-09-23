@@ -10,6 +10,7 @@ import {
   PROMPT_PRESETS,
   TEMPLATES,
   TEMPLATE_CATEGORIES,
+  TEST_RESULTS,
   type MiniAppKind,
   type PromptPreset,
 } from '@/data/site';
@@ -118,7 +119,7 @@ export default function Index() {
                 长成一个能跑的应用
               </h1>
               <p className="mt-4 max-w-[46ch] text-[16px] leading-[1.65] text-[#a0a6af]">
-                描述你想要的产品，Atoms 的智能体团队会拆解需求、编写代码、构建校验并发布预览。全程可见，随时对话式修改。
+                描述你想要的产品，Atoms 的智能体团队会拆解需求、编写代码、构建校验、跑通测试并发布预览。全程可见，随时对话式修改。
               </p>
 
               <div className="mt-7 rounded-[14px] border border-[#24272d] bg-[#17191d] p-3 sm:p-4">
@@ -220,6 +221,21 @@ export default function Index() {
                     <MiniApp kind={previewKind} />
                   )}
                 </div>
+                {phase === 'done' && (
+                  <div className="border-t border-[#24272d] bg-[#141619] px-3 py-2.5">
+                    <p className="font-mono-ui text-[10px] uppercase tracking-[0.14em] text-[#6b727c]">test report</p>
+                    <ul className="mt-2 grid grid-cols-3 gap-2">
+                      {TEST_RESULTS.map((r) => (
+                        <li key={r.id} className="rounded-[8px] border border-[#24272d] bg-[#0f1113] px-2.5 py-2">
+                          <p className="text-[11px] text-[#6b727c]">{r.label}</p>
+                          <p className={cn('font-mono-ui mt-0.5 text-[13px] font-semibold', r.passed ? 'text-[#4ade80]' : 'text-[#f87171]')}>
+                            {r.value}
+                          </p>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
                 <div className="flex flex-wrap items-center gap-2 border-t border-[#24272d] bg-[#141619] px-3 py-2.5">
                   {result.stack.map((s) => (
                     <span key={s} className="font-mono-ui rounded-[6px] border border-[#24272d] px-2 py-0.5 text-[10px] text-[#a0a6af]">
