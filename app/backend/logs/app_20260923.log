@@ -1986,3 +1986,69 @@ For more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/St
 2026-09-23 15:54:00,525 - dependencies.auth - DEBUG - Authentication required for request GET /api/v1/auth/me
 2026-09-23 15:54:00,529 - dependencies.auth - DEBUG - Authentication required for request GET /api/v1/auth/me
 2026-09-23 15:54:00,533 - dependencies.auth - DEBUG - Authentication required for request GET /api/v1/auth/me
+2026-09-23 15:54:52,876 - main - INFO - === Logging system initialized ===
+2026-09-23 15:54:52,876 - main - INFO - Log file: logs/app_20260923.log
+2026-09-23 15:54:52,876 - main - INFO - Log level: DEBUG
+2026-09-23 15:54:52,876 - main - INFO - Log date: 20260923
+2026-09-23 15:54:52,975 - main - INFO - Included router: routers.aihub.router
+2026-09-23 15:54:53,757 - main - INFO - Included router: routers.auth.router
+2026-09-23 15:54:53,854 - main - INFO - Included router: routers.build_tasks.router
+2026-09-23 15:54:54,311 - main - INFO - Included router: routers.generation.router
+2026-09-23 15:54:54,316 - main - INFO - Included router: routers.health.router
+2026-09-23 15:54:54,362 - main - INFO - Included router: routers.project_versions.router
+2026-09-23 15:54:54,396 - main - INFO - Included router: routers.projects.router
+2026-09-23 15:54:54,409 - main - INFO - Included router: routers.settings.router
+2026-09-23 15:54:54,456 - main - INFO - Included router: routers.storage.router
+2026-09-23 15:54:54,486 - main - INFO - Included router: routers.usage_quotas.router
+2026-09-23 15:54:54,501 - main - INFO - Included router: routers.user.router
+2026-09-23 15:54:54,502 - main - INFO - === Application startup initiated ===
+2026-09-23 15:54:54,503 - main - INFO - === Application startup completed successfully ===
+2026-09-23 15:54:54,503 - core.config - DEBUG - Read dynamic attribute database_url from environment variable DATABASE_URL
+2026-09-23 15:54:54,505 - core.database - INFO - Using QueuePool for non-Lambda environment (pool_pre_ping=True, pool_size=5, max_overflow=5, pool_recycle=280s, pool_timeout=30s, pool_use_lifo=True)
+2026-09-23 15:54:54,584 - core.database - INFO - Database connection initialized successfully
+2026-09-23 15:57:12,622 - main - INFO - === Logging system initialized ===
+2026-09-23 15:57:12,622 - main - INFO - Log file: logs/app_20260923.log
+2026-09-23 15:57:12,623 - main - INFO - Log level: DEBUG
+2026-09-23 15:57:12,623 - main - INFO - Log date: 20260923
+2026-09-23 15:57:12,753 - main - INFO - Included router: routers.aihub.router
+2026-09-23 15:57:13,478 - main - INFO - Included router: routers.auth.router
+2026-09-23 15:57:13,571 - main - INFO - Included router: routers.build_tasks.router
+2026-09-23 15:57:13,840 - main - INFO - Included router: routers.generation.router
+2026-09-23 15:57:13,843 - main - INFO - Included router: routers.health.router
+2026-09-23 15:57:13,876 - main - INFO - Included router: routers.project_versions.router
+2026-09-23 15:57:13,905 - main - INFO - Included router: routers.projects.router
+2026-09-23 15:57:13,916 - main - INFO - Included router: routers.settings.router
+2026-09-23 15:57:13,926 - main - INFO - Included router: routers.storage.router
+2026-09-23 15:57:13,951 - main - INFO - Included router: routers.usage_quotas.router
+2026-09-23 15:57:13,962 - main - INFO - Included router: routers.user.router
+2026-09-23 15:57:13,963 - main - INFO - === Application startup initiated ===
+2026-09-23 15:57:13,963 - main - INFO - === Application startup completed successfully ===
+2026-09-23 15:57:13,963 - core.config - DEBUG - Read dynamic attribute database_url from environment variable DATABASE_URL
+2026-09-23 15:57:13,964 - core.database - INFO - Using QueuePool for non-Lambda environment (pool_pre_ping=True, pool_size=5, max_overflow=5, pool_recycle=280s, pool_timeout=30s, pool_use_lifo=True)
+2026-09-23 15:57:14,045 - core.database - INFO - Database connection initialized successfully
+2026-09-23 15:57:16,785 - core.config - DEBUG - Read dynamic attribute jwt_secret_key from environment variable JWT_SECRET_KEY
+2026-09-23 15:57:16,906 - core.config - DEBUG - Read dynamic attribute jwt_algorithm from environment variable JWT_ALGORITHM
+2026-09-23 16:01:21,306 - main - INFO - === Logging system initialized ===
+2026-09-23 16:01:21,307 - main - INFO - Log file: logs/app_20260923.log
+2026-09-23 16:01:21,307 - main - INFO - Log level: DEBUG
+2026-09-23 16:01:21,307 - main - INFO - Log date: 20260923
+2026-09-23 16:01:21,413 - main - INFO - Included router: routers.aihub.router
+2026-09-23 16:01:22,075 - main - INFO - Included router: routers.auth.router
+2026-09-23 16:01:22,184 - main - INFO - Included router: routers.build_tasks.router
+2026-09-23 16:01:22,520 - main - INFO - Included router: routers.generation.router
+2026-09-23 16:01:22,523 - main - INFO - Included router: routers.health.router
+2026-09-23 16:01:22,548 - main - INFO - Included router: routers.project_versions.router
+2026-09-23 16:01:22,575 - main - INFO - Included router: routers.projects.router
+2026-09-23 16:01:22,585 - main - INFO - Included router: routers.settings.router
+2026-09-23 16:01:22,596 - main - INFO - Included router: routers.storage.router
+2026-09-23 16:01:22,621 - main - INFO - Included router: routers.usage_quotas.router
+2026-09-23 16:01:22,636 - main - INFO - Included router: routers.user.router
+2026-09-23 16:01:22,638 - main - INFO - === Application startup initiated ===
+2026-09-23 16:01:22,638 - main - INFO - === Application startup completed successfully ===
+2026-09-23 16:01:22,638 - core.config - DEBUG - Read dynamic attribute database_url from environment variable DATABASE_URL
+2026-09-23 16:01:22,639 - core.database - INFO - Using QueuePool for non-Lambda environment (pool_pre_ping=True, pool_size=5, max_overflow=5, pool_recycle=280s, pool_timeout=30s, pool_use_lifo=True)
+2026-09-23 16:01:22,683 - core.database - INFO - Database connection initialized successfully
+2026-09-23 16:01:47,787 - dependencies.auth - DEBUG - Authentication required for request GET /api/v1/auth/me
+2026-09-23 16:01:47,792 - dependencies.auth - DEBUG - Authentication required for request GET /api/v1/auth/me
+2026-09-23 16:01:47,799 - dependencies.auth - DEBUG - Authentication required for request GET /api/v1/auth/me
+2026-09-23 16:01:47,809 - dependencies.auth - DEBUG - Authentication required for request GET /api/v1/auth/me

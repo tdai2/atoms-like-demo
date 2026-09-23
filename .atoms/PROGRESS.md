@@ -10,6 +10,8 @@ last_updated: 2026-09-22T07:20:00Z
 
 阶段二在此之上接入 Atoms Cloud：账号复用平台内置认证，项目、六阶段任务、版本与配额落库，生成链路改为「创建任务 + 轮询服务端状态」。交付目标是登录用户能看到归属自己的项目列表。
 
+阶段三把生成链路替换为真实实现：六个阶段由真实模型调用驱动，产物写入对象存储并以 iframe 预览；同时完成异步执行、配额原子扣减与失败退款、阶段原子抢占与陈旧回收、慢调用前后拆分事务等可靠性加固。交付目标是输入任意需求即可得到可访问的真实应用，且外部模型异常时不白扣额度、不留半成品。
+
 ## User Stories
 
 - 作为访客，我能在首屏输入一句自然语言需求，并看到生成过程被逐步推进。
@@ -71,7 +73,7 @@ last_updated: 2026-09-22T07:20:00Z
 ## Progress Log
 
 - 2026-09-23 只读持久化审计（未改代码、未构建）：`users` 1 行（`1606800`），`projects`／`build_tasks`／`project_versions` 均为 0 行，`usage_quotas` 2 行（`1606800` 已用 1，`verify-stage3-user` 已用 0）；四张表均有 `user_id` 索引且无孤立任务／版本、无用户归属错配。对象存储 bucket `generation-artifacts` 残留 3 个对象：空键占位、`projects/2/v1/index.html`（12292 B，2026-09-23T07:47:06Z）、`verify/stage3/healthcheck.html`（239 B）。结论：当前无任何账户存在已持久化项目；账号 `1606800` 额度已扣 1 但无项目行，与「生成后被删除」一致，且删除接口只清理业务表、未清理对象存储产物，故遗留 `projects/2/...` 孤儿对象；`verify-stage3-user` 的配额行为验证脚本残留、`users` 表中无对应用户。
-- 2026-09-23 阶段三收尾完成：六个阶段由真实 AI 驱动（需求解析 `deepseek-v4-flash`、方案规划与代码编写 `claude-opus-5`），生成的单文件应用上传至对象存储 `generation-artifacts`（键 `projects/{id}/v{n}/index.html`），可访问地址写入 `projects.preview_url`，预览窗改为真实 iframe；数据库只存 `artifact_key`，签名地址即时解析不持久化。
+- 2026-09-23 阶段三收尾完成：六个阶段由真实 AI 驱动（需求解析 `deepseek-v4-flash`、方案规划与代码编写 `claude-opus-5`），生成的单文件应用上传至对象存储 `generation-artifacts`（键 `projects/{id}/v{n}/index.html`），预览窗改为真实 iframe；数据库只存对象键 `artifact_key`，`projects.preview_url` 不写入签名地址，预览地址每次请求按对象键即时解析。
 - 2026-09-23 可靠性加固：配额改为条件原子扣减并在模型失败时退款，阶段执行增加原子抢占与 `600` 秒陈旧阶段回收，AI 与对象存储慢调用前后均不持有数据库事务。
 - 2026-09-23 认证链路回归修复：平台登出回跳地址 `/logout-callback` 此前未注册路由，登出后会落到空白页，现补上该页面并统一为登出后自动返回首页。
 - 2026-09-23 清理无引用的关键词模拟预览组件（`MiniApp.tsx` 及 `LoadingSpinner` 仅剩的登出页引用一并替换），仓库内不再残留模拟流程。
@@ -114,4 +116,8 @@ last_updated: 2026-09-22T07:20:00Z
 - 2026-09-22 「免费开始」入口由失效的首页锚点改为真实链路：新增 `lib/startFree.ts`（跨页面意图）、`hooks/useStartFree.ts`（三态与登录判断）、`components/StartFreeIntentWatcher.tsx`（路由级兜底消费），未登录先进入登录页，登录后回到首页需求输入区并聚焦。
 - 2026-09-22 免费额度侧未改动：每账号按自然月自动创建 20 次配额，跨月重置，额度用尽返回明确提示。
 - 2026-09-22 `pnpm run lint && pnpm run build` 通过（退出码 0），界面渲染检查通过。
+- 2026-09-23 文档统一同步（本轮）：以实际代码为准，逐份校正 `docs/mission.md`（各层落地状态与未落地范围）、`docs/plan.md`（阶段状态模型、六张表字段、模块划分与依赖方向、六阶段真实产出与失败处理、阶段三交付清单、未完成事项）、根 `README.md`（阶段三进度、后端运行与验证命令）、`app/frontend/README.md`（路由表补 `/logout-callback`、关键文件替换已删除的模拟预览组件、生成链路改为后台异步 + iframe 预览、移除阶段三待接入表述）、`.wiki.md`（目录树修正误列的后台工作器路径）与 `.atoms/ARCHITECTURE.md`（系统概览、文件树改为真实结构）。统一口径：预览地址按对象键即时解析、不落库；阶段状态取值为 `pending/running/done/failed`；项目状态取值为 `queued/pending/running/succeeded/failed`。
+
+- 2026-09-23 文档同步收尾：清除文档内最后残留的过期表述（`.atoms/ARCHITECTURE.md` 文件树中已删除的模拟预览组件、`.wiki.md` 目录树中误列为后端根文件的后台工作器、`.atoms/PROGRESS.md` 中「可访问地址写入 `projects.preview_url`」的旧描述），并修正 `services/generation_artifacts.py` 模块与函数注释为真实行为（业务表只存对象键 `artifact_key`，访问地址按对象键即时解析、不落库）；注释改动后 `python -m py_compile services/generation_artifacts.py` 通过（`PYCOMPILE_OK`）。决策表中「阶段二 `preview_url` 留空」「阶段一用本地定时状态机」等历史行按约定保留原文，不改写历史，现状统一由概览段与新增决策行表达。
+
 - 2026-09-23 新增后端开发文档 `docs/backend.md`：逐项对齐实际实现，覆盖技术栈与运行形态、目录职责与路由自动发现、生命周期与本地自测、全部环境变量、OIDC+PKCE 登录链路与应用 JWT 鉴权、数据库连接池策略与事务边界硬性规范、六张表数据模型、六阶段流水线与三段式阶段执行/后台工作器/配额退款/重试/测试报告口径、全量 API 清单（生成、认证、用户、实体 CRUD、AI、对象存储、管理健康）、AI 调用约定（模型、180 秒硬超时、异常收敛、JSON 容错）、对象存储产物链路、502/524 根因与修复对照表、幂等恢复、验证脚本清单与开发规范要点；根 `README.md` 目录规划与文档索引同步加入该文档。

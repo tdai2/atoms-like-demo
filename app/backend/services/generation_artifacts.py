@@ -1,9 +1,9 @@
 """生成产物的对象存储读写。
 
-产物（生成出的单文件应用）不入库，只把对象键与访问地址写回业务表：
+产物（生成出的单文件应用）不入库，业务表只保存对象键 `projects.artifact_key`：
 - 上传：取预签名上传地址后直接 PUT 内容。
 - 校验/测试：按对象键取下载地址后回读真实内容。
-- 发布：把下载地址写入 `projects.preview_url`，供预览窗以 iframe 访问。
+- 发布：按对象键即时解析下载地址并确认可访问，供预览窗以 iframe 访问；地址本身不落库。
 """
 
 import logging
@@ -75,7 +75,7 @@ async def fetch_html(object_key: str) -> Optional[str]:
 
 
 async def public_url(object_key: str) -> str:
-    """可访问的产物地址，写入 `projects.preview_url`。"""
+    """按对象键即时解析产物访问地址；地址不入库，避免签名链接过期后失效。"""
     service = StorageService()
     request = FileUpDownRequest(bucket_name=BUCKET_NAME, object_key=object_key)
     download = await service.create_download_url(request)
@@ -85,7 +85,7 @@ async def public_url(object_key: str) -> str:
 
 
 async def is_reachable(url: str) -> bool:
-    """发布前确认产物地址真的可访问，避免写入失效链接。"""
+    """发布前确认产物地址真的可访问，避免把失效链接交给预览窗。"""
     try:
         async with httpx.AsyncClient(timeout=30.0, follow_redirects=True) as client:
             response = await observe_external_http(client.get(url))

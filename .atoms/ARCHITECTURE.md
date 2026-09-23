@@ -2,11 +2,13 @@
 
 ## System Overview
 
-Atoms 风格 AI 应用生成平台：前端 SPA + Atoms Cloud 后端。核心链路：用户在首屏 Prompt Console 输入需求 → 后端按需求文本推导结构化方案并落库项目、版本与六阶段任务 → 前端轮询项目详情，由服务端时间驱动阶段状态 → 在预览窗渲染对应的真实迷你应用组件，完成后展示服务端返回的测试报告。账号复用 Atoms 内置认证，项目、任务、版本与配额均按用户隔离持久化。
+Atoms 风格 AI 应用生成平台：前端 SPA + Atoms Cloud 后端。核心链路：用户在首屏 Prompt Console 输入需求 → 后端校验、占用额度并落库项目、版本与六阶段任务 → 后台工作器按真实模型执行结果推进阶段 → 前端轮询项目详情 → 在预览窗用 iframe 加载对象存储中的真实产物，完成后展示服务端返回的测试报告。账号复用 Atoms 内置认证，项目、任务、版本与配额均按用户隔离持久化。
 
-阶段二起生成链路不再依赖前端定时器：`POST /api/v1/generation/projects` 创建任务并占用额度，`GET /api/v1/generation/projects/{id}` 轮询阶段状态，重试复用同一项目开启新一批任务。
+生成链路不依赖前端定时器：`POST /api/v1/generation/projects` 创建任务并占用额度后立即返回，`GET /api/v1/generation/projects/{id}` 轮询阶段状态，重试复用同一项目开启新一批任务且不重复扣额。
 
-阶段三完成收尾：六个阶段全部改为真实 AI 调用（需求解析 `deepseek-v4-flash`，方案规划与代码编写 `claude-opus-5`），生成的单文件应用上传至对象存储 `generation-artifacts`，容器键为 `projects/{project_id}/v{version}/index.html`，可访问地址写入 `projects.preview_url`，预览窗改为真实 iframe；数据库只保存 `artifact_key`，签名地址即时解析，不持久化。
+阶段三完成收尾：六个阶段全部改为真实 AI 调用（需求解析 `deepseek-v4-flash`，方案规划与代码编写 `claude-opus-5`），生成的单文件应用上传至对象存储 `generation-artifacts`，对象键为 `projects/{project_id}/v{version}/index.html`，预览窗改为真实 iframe。数据库只保存对象键 `artifact_key`，`projects.preview_url` 不写入签名地址，预览地址每次请求即时解析。
+
+执行形态为后台异步：请求在调度工作器前先归还数据库连接，阶段执行拆为「短事务抢占 → 无连接慢调用 → 短事务回写」三段，慢调用全程不持有数据库事务，避免与并发轮询争抢连接池。
 
 ## Tech Stack
 
@@ -52,17 +54,40 @@ Atoms 风格 AI 应用生成平台：前端 SPA + Atoms Cloud 后端。核心链
 ## File Tree Plan
 
 ```
-src/
-  App.tsx
-  index.css
-  data/site.ts
-  components/SiteHeader.tsx
-  components/MiniApp.tsx
-  pages/Index.tsx
-  pages/Changelog.tsx
-  pages/Placeholder.tsx
-  data/changelog.ts
-DESIGN.md
+app/frontend/src/
+  App.tsx                     # 路由壳（含 /logout-callback）
+  blog-routes.tsx             # 博客路由，SPA 与预渲染共用
+  index.css                   # 设计令牌与动效
+  data/site.ts                # 提示词、模板、阶段、能力、定价
+  data/changelog.ts           # 平台发布记录
+  components/SiteHeader.tsx   # 粘性顶栏与账号区
+  components/LoadingSpinner.tsx
+  contexts/AuthContext.tsx
+  hooks/useAuthStatus.ts
+  hooks/useProjects.ts
+  hooks/useStartFree.ts
+  lib/api.ts                  # Web SDK 客户端唯一边界
+  lib/projects.ts             # 生成接口封装与网关错误处理
+  lib/startFree.ts
+  pages/Index.tsx             # 首页与生成链路（轮询 + iframe 预览）
+  pages/Projects.tsx
+  pages/ProjectDetail.tsx
+  pages/SignIn.tsx / SignUp.tsx / LogoutCallbackPage.tsx
+  pages/AuthCallback.tsx / AuthError.tsx
+  pages/Changelog.tsx / Placeholder.tsx
+app/frontend/DESIGN.md
+
+app/backend/
+  main.py                     # FastAPI 入口、自动路由、恢复任务
+  lambda_handler.py
+  core/                       # 配置、数据库、认证、遥测
+  dependencies/               # 认证与数据库依赖
+  models/ schemas/ alembic/   # 持久化实体、契约与迁移
+  routers/                    # generation / auth / aihub / storage / entities
+  services/                   # generation, pipeline_runner, generation_ai, generation_artifacts, storage
+  verify_*.py                 # stage3 / pipeline / quota_refund / gateway_timeout
+docs/
+  mission.md  plan.md  backend.md
 ```
 
 ## Implementation Guide

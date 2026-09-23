@@ -54,16 +54,38 @@ atoms_demo/
 
 阶段二同时补齐了账号体验与发布记录：顶栏账号区在登录后显示账号邮箱与「退出登录」，未登录显示「登录 / 免费开始」；首页页脚不再出现与账号状态无关的登录入口；`/changelog` 最新条目为 `v0.7.0`（账号体系与项目持久化）。
 
-真实模型生成与可访问的部署链接属于阶段三，尚未接入：当前方案推导与阶段日志由后端按需求关键词与时间推导，阶段二不产出真实部署地址（`preview_url` 为空）。
+阶段三**真实生成与可访问产物已完成**：六个阶段全部由真实模型调用驱动（需求解析 `deepseek-v4-flash`，方案规划与代码编写 `claude-opus-5`），生成的单文件应用上传至对象存储 `generation-artifacts`，预览窗改为 iframe 加载真实产物地址。执行改为后台异步：创建接口只做校验、扣额与落库并立即返回，后台工作器推进阶段，前端轮询服务端状态，请求全程不持有数据库连接等待慢调用。
+
+阶段三同时完成可靠性加固：配额改为条件原子扣减并在模型失败时退还，阶段执行拆为「短事务抢占 → 无连接慢调用 → 短事务回写」三段，阶段具备原子抢占与 `600` 秒陈旧回收，进程重启后会重新接管未完成项目。数据库只保存对象键 `artifact_key`，签名预览地址每次请求即时解析，不落库。
 
 ## 本地运行
 
 ```bash
+# 前端
 cd app/frontend
 pnpm install
 pnpm run dev      # 本地预览
 pnpm run lint     # 代码检查
 pnpm run build    # 生产构建（含 / 与 /blog/ 预渲染）
+
+# 后端
+cd app/backend
+python -m pip install -r requirements.txt
+alembic upgrade head
+uvicorn main:app --host 0.0.0.0 --port 8000   # 生产部署不要加 --reload
+curl http://localhost:8000/health
+```
+
+后端的环境变量、认证、事务边界、API 契约与验证脚本见 [docs/backend.md](docs/backend.md)。
+
+后端验证脚本（需要可用的平台 AI 额度）：
+
+```bash
+cd app/backend
+python verify_stage3.py           # 真实 AI + 对象存储 + 预览可达性
+python verify_pipeline.py         # 六阶段端到端
+python verify_quota_refund.py     # 模型失败退款与无残留
+python verify_gateway_timeout.py  # 创建/轮询耗时与并发
 ```
 
 ## 文档
