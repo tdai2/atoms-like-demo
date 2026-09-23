@@ -38,7 +38,8 @@
 atoms_demo/
 ├── docs/
 │   ├── mission.md    # 顶层纲领：使命、原则、边界、范围
-│   └── plan.md       # 工程方案：架构、模块、技术选型、实施阶段
+│   ├── plan.md       # 工程方案：架构、模块、技术选型、实施阶段
+│   └── backend.md    # 后端开发文档：分层结构、认证、事务边界、流水线、API、存储、部署
 ├── app/
 │   ├── frontend/     # 前端 SPA（输入台、时间线、预览窗、我的项目）
 │   └── backend/      # Atoms Cloud 后端（认证、项目、任务、版本、配额）
@@ -73,5 +74,6 @@ pnpm run build    # 生产构建（含 / 与 /blog/ 预渲染）
 | [docs/plan.md](docs/plan.md) | 分层架构、状态模型、数据模型、模块划分、技术选型、实施阶段与阶段一交付清单 |
 | [app/frontend/DESIGN.md](app/frontend/DESIGN.md) | 视觉规范：色彩令牌、字体、间距圆角、组件状态、动效与可访问性 |
 | [app/frontend/README.md](app/frontend/README.md) | 前端路由、关键文件、生成演示链路与开发说明 |
+| [docs/backend.md](docs/backend.md) | 后端开发文档：目录结构、认证与授权、数据库与事务边界、六阶段生成流水线、API 清单、AI 与对象存储、可靠性与部署约束 |
 
 所有技术决策服从 `docs/mission.md` 的方向与边界。
