@@ -10,6 +10,8 @@ Atoms 风格 AI 应用生成平台：前端 SPA + Atoms Cloud 后端。核心链
 
 执行形态为后台异步：请求在调度工作器前先归还数据库连接，阶段执行拆为「短事务抢占 → 无连接慢调用 → 短事务回写」三段，慢调用全程不持有数据库事务，避免与并发轮询争抢连接池。
 
+阶段四在项目详情页提供测试闭环：用例可自动生成（`claude-opus-5` 基于方案与回读的真实产物产出）也可手动维护，执行时回读对象存储中的产物源码并做确定性断言匹配，结果（总数、通过数、失败数、耗时与逐例明细）写入 `test_runs` 形成可回溯的测试历史。通过与否由产物决定，不由模型判定；无产物的项目拒绝生成与执行，不伪造通过态。
+
 ## Tech Stack
 
 前端：Vite + React + TypeScript + Tailwind CSS + shadcn/ui + react-router-dom + lucide-react + TanStack Query（轮询与缓存）。
@@ -35,7 +37,10 @@ Atoms 风格 AI 应用生成平台：前端 SPA + Atoms Cloud 后端。核心链
 | 项目详情 | 流水线快照、方案、测试报告与失败重试 | src/pages/ProjectDetail.tsx |
 | 生成编排 | 方案推导、六阶段推进、版本与配额 | app/backend/services/generation.py |
 | 生成接口 | 创建/列表/详情/重试/删除/版本/模板方案 | app/backend/routers/generation.py |
-| 实体 CRUD | 项目、任务、版本、配额的自动生成路由 | app/backend/routers/{projects,build_tasks,project_versions,usage_quotas}.py |
+| 测试面板 | 用例生成与手动增删改、执行、结果统计、运行历史切换 | src/components/TestSuitePanel.tsx |
+| 测试编排 | 用例生成、产物上的确定性执行、运行统计与项目级清理 | app/backend/services/test_suite.py |
+| 测试接口 | 面板快照、生成、用例 CRUD、执行与运行详情 | app/backend/routers/test_suite.py |
+| 实体 CRUD | 项目、任务、版本、配额、测试用例、测试运行的自动生成路由 | app/backend/routers/{projects,build_tasks,project_versions,usage_quotas,test_cases,test_runs}.py |
 
 ## Tech Decisions
 | Decision | Choice | Rationale |
@@ -61,6 +66,7 @@ app/frontend/src/
   data/site.ts                # 提示词、模板、阶段、能力、定价
   data/changelog.ts           # 平台发布记录
   components/SiteHeader.tsx   # 粘性顶栏与账号区
+  components/TestSuitePanel.tsx # 阶段四测试面板
   components/LoadingSpinner.tsx
   contexts/AuthContext.tsx
   hooks/useAuthStatus.ts
@@ -83,9 +89,9 @@ app/backend/
   core/                       # 配置、数据库、认证、遥测
   dependencies/               # 认证与数据库依赖
   models/ schemas/ alembic/   # 持久化实体、契约与迁移
-  routers/                    # generation / auth / aihub / storage / entities
-  services/                   # generation, pipeline_runner, generation_ai, generation_artifacts, storage
-  verify_*.py                 # stage3 / pipeline / quota_refund / gateway_timeout
+  routers/                    # generation / auth / aihub / storage / test_suite / entities
+  services/                   # generation, pipeline_runner, generation_ai, generation_artifacts, test_suite, storage
+  verify_*.py                 # stage3 / pipeline / quota_refund / gateway_timeout / test_suite
 docs/
   mission.md  plan.md  frontend.md  backend.md  changelog.md
 ```

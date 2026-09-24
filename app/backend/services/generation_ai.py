@@ -22,6 +22,7 @@ logger = logging.getLogger(__name__)
 
 PARSE_MODEL = "deepseek-v4-flash"
 CODE_MODEL = "claude-opus-5"
+TEST_MODEL = "claude-opus-5"
 ENTRY_FILE = "index.html"
 
 # Hard ceiling for a single model call. A stalled upstream must fail the stage
@@ -316,3 +317,78 @@ async def write_application(
         "content": entry_content,
         "summary": str(payload.get("summary") or "").strip(),
     }
+
+
+# 测试用例类型：结构（标签/区块存在性）、交互（脚本与事件绑定）、内容（文案与业务标签）。
+CASE_TYPES = ("structure", "behavior", "content")
+_HTML_EXCERPT_LIMIT = 6000
+
+
+def _html_excerpt(html: str) -> str:
+    """产物可能很大，只截取前段内容，控制单次调用的输入成本。"""
+    return (html or "")[:_HTML_EXCERPT_LIMIT]
+
+
+async def write_test_cases(
+    spec: Dict[str, Any],
+    plan: Dict[str, Any],
+    html: str,
+    minimum: int = 6,
+    repair_hint: str = "",
+) -> List[Dict[str, str]]:
+    """根据方案与真实产物内容产出可自动执行的测试用例。
+
+    `assertion` 是能在产物源码中直接匹配的字面量，执行阶段据此做确定性断言；
+    模型只负责「找出值得验证的点」，是否通过由真实产物决定，不由模型判定。
+    """
+    system = (
+        f"{_JSON_SYSTEM} 你是测试工程师，为给定的单文件 Web 应用产出可自动执行的测试用例。"
+        "输出字段：cases（数组，6-10 项，每项含 title、case_type、preconditions、steps、expected、assertion）。"
+        "case_type 只能取 structure（结构：按钮、表单、标题、区块等标签是否存在）、"
+        "behavior（交互：脚本与事件绑定是否实现）、content（内容：中文文案与业务标签是否出现）。"
+        "assertion 必须是能在产物 HTML 源码中直接匹配的小写字面量片段，例如 \"<button\"、\"addeventlistener\"、"
+        "\"<h1\"、\"新增\”；不要写正则表达式、不要带引号包裹、不要写解释或空格占位。"
+        "title 用简短中文描述这条用例在验证什么；steps 说明人工复核时的操作；expected 说明预期结果。"
+        "用例要覆盖该应用真实存在的界面与文案，不要臆造产物中没有的元素。"
+    )
+    user = (
+        f"应用：{spec.get('display_name')}（{spec.get('app_name')}）\n"
+        f"页面：{'、'.join(spec.get('pages', []))}\n"
+        f"数据实体：{'、'.join(spec.get('entities', []))}\n"
+        f"技术栈：{'、'.join(spec.get('stack', []))}\n"
+        f"文件清单：{'、'.join(item.get('path', '') for item in plan.get('files', []) if isinstance(item, dict))}\n"
+        f"组件树：{'；'.join(plan.get('component_tree', []))}\n"
+        f"产物源码节选：\n{_html_excerpt(html)}"
+        f"{repair_hint}"
+    )
+    payload = await _complete_json(system, user, TEST_MODEL, max_tokens=2600)
+    raw_cases = payload.get("cases")
+    if not isinstance(raw_cases, list):
+        raise GenerationAIError("测试用例输出缺少 `cases` 数组")
+
+    cases: List[Dict[str, str]] = []
+    seen: set = set()
+    for item in raw_cases:
+        if not isinstance(item, dict):
+            continue
+        title = str(item.get("title") or "").strip()
+        assertion = str(item.get("assertion") or "").strip().strip('"').strip("'").strip().lower()
+        if not title or not assertion or assertion in seen:
+            continue
+        case_type = str(item.get("case_type") or "").strip().lower()
+        if case_type not in CASE_TYPES:
+            case_type = "content"
+        seen.add(assertion)
+        cases.append(
+            {
+                "title": title[:120],
+                "case_type": case_type,
+                "preconditions": str(item.get("preconditions") or "已发布可访问的产物").strip()[:300],
+                "steps": str(item.get("steps") or "").strip()[:600],
+                "expected": str(item.get("expected") or "").strip()[:300],
+                "assertion": assertion[:200],
+            }
+        )
+    if len(cases) < minimum:
+        raise GenerationAIError(f"测试用例输出不足 {minimum} 条（实际 {len(cases)} 条）")
+    return cases[:12]

@@ -21,7 +21,7 @@ from models.build_tasks import Build_tasks
 from models.project_versions import Project_versions
 from models.projects import Projects
 from schemas.auth import UserResponse
-from services import generation, pipeline_runner
+from services import generation, pipeline_runner, test_suite
 from services.generation import (
     ProjectNotFound,
     QuotaExceeded,
@@ -325,7 +325,7 @@ async def delete_generation_project(
     current_user: UserResponse = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
-    """删除项目，同时清理其任务与版本记录。"""
+    """删除项目，同时清理其任务、版本与测试用例/执行记录。"""
     user_id = str(current_user.id)
     await _load_project(db, user_id, project_id)
     await db.execute(
@@ -336,6 +336,7 @@ async def delete_generation_project(
             Project_versions.project_id == project_id, Project_versions.user_id == user_id
         )
     )
+    await test_suite.purge_project_tests(db, user_id, project_id)
     await db.execute(sql_delete(Projects).where(Projects.id == project_id, Projects.user_id == user_id))
     await db.commit()
     return {"id": project_id, "message": "项目已删除"}

@@ -33,7 +33,8 @@
 |------|------|
 | `src/pages/Index.tsx` | 首页与生成链路：输入台、服务端阶段轮询、iframe 预览窗、模板库、定价、CTA |
 | `src/pages/Projects.tsx` | 我的项目列表：加载 / 未登录 / 空列表 / 失败重试 / 成功列表与额度 |
-| `src/pages/ProjectDetail.tsx` | 项目详情：六阶段流水线快照、方案、测试报告、版本与重试 |
+| `src/pages/ProjectDetail.tsx` | 项目详情：六阶段流水线快照、方案、测试报告、版本、重试与测试面板入口 |
+| `src/components/TestSuitePanel.tsx` | 阶段四测试面板：用例生成、执行、结果统计与运行历史 |
 | `src/pages/SignIn.tsx`、`src/pages/SignUp.tsx` | 平台账号登录与注册入口 |
 | `src/pages/LogoutCallbackPage.tsx` | 登出完成页，处理平台登出后的回跳落点 |
 | `src/lib/projects.ts` | 生成接口的类型定义、调用封装与错误处理 |
@@ -82,9 +83,18 @@ pnpm run build    # 生产构建，含 / 与 /blog/ 预渲染
 - `src/pages/AuthCallback.tsx` 为平台只读文件，不做修改。
 - 发布记录集中在 `src/data/changelog.ts`：新增版本时在数组顶部追加一条 `Release`，页面会自动置顶并标记 `LATEST`，类型筛选计数与版本跳转同步更新；当前最新为 `v0.8.0`（真实生成与可访问产物）。
 
+## 阶段四：测试能力
+
+项目详情页的测试面板（`src/components/TestSuitePanel.tsx`）围绕真实产物提供测试闭环：
+
+1. 生成用例：调用 `POST /api/v1/testing/projects/{id}/cases/generate`，由后端基于方案与对象存储中的真实产物产出 6-10 条用例；重复生成会替换自动用例，保留手动新增的用例。
+2. 执行测试：`POST /api/v1/testing/projects/{id}/runs` 在当前产物上跑全部启用用例，返回总数、通过数、失败数、耗时与逐例结果。
+3. 运行历史：切换查看历次执行，历史记录可回溯；删除用例不影响已保存的历史。
+4. 手动维护：新增、编辑、启用 / 停用与删除用例；停用的用例不参与执行。
+5. 状态覆盖：加载中、无产物、无用例、执行失败与成功态均有明确反馈。没有产物的项目会拒绝生成与执行，不会伪造通过结果。
+
 ## 后续阶段
 
-- 阶段四：测试用例生成、执行与历史记录。
 - 阶段五：Bug 提交、记录与自动修复。
 - 阶段六：对话式增量修改与版本回溯。
 - 阶段七：自定义域名、团队协作与权限。

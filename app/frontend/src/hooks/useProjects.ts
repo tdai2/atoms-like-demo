@@ -1,12 +1,20 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   createProject,
+  createTestCase,
   deleteProject,
+  deleteTestCase,
+  executeTestRun,
   fetchPipeline,
   fetchProjects,
+  fetchTestSuite,
+  generateTestCases,
   isTransientGatewayError,
   PIPELINE_RETRY_LIMIT,
   retryProject,
+  updateTestCase,
+  type CaseState,
+  type TestCaseInput,
 } from '@/lib/projects';
 
 const POLL_INTERVAL_MS = 1500;
@@ -80,6 +88,82 @@ export function useDeleteProject() {
     retryDelay,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['generation', 'projects'] });
+    },
+  });
+}
+
+/** 阶段四：测试面板快照（用例、最近运行与运行历史）。 */
+export function useTestSuite(projectId: number | null, enabled: boolean) {
+  return useQuery({
+    queryKey: ['testing', 'suite', projectId],
+    queryFn: () => fetchTestSuite(projectId as number),
+    enabled: enabled && projectId !== null,
+    retry: retryTransient,
+    retryDelay,
+  });
+}
+
+/**
+ * 用例生成与执行都会消耗真实的模型额度或对象存储读取，
+ * 因此禁用自动重试：失败必须让用户看到结果并自行决定是否再来一次。
+ */
+export function useGenerateTestCases(projectId: number) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: () => generateTestCases(projectId),
+    retry: false,
+    onSuccess: (data) => {
+      queryClient.setQueryData(['testing', 'suite', projectId], data);
+    },
+  });
+}
+
+export function useExecuteTestRun(projectId: number) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: () => executeTestRun(projectId),
+    retry: false,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['testing', 'suite', projectId] });
+    },
+  });
+}
+
+export function useCreateTestCase(projectId: number) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (data: TestCaseInput) => createTestCase(projectId, data),
+    retry: false,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['testing', 'suite', projectId] });
+    },
+  });
+}
+
+export function useUpdateTestCase(projectId: number) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      caseId,
+      data,
+    }: {
+      caseId: number;
+      data: Partial<TestCaseInput> & { case_state?: CaseState };
+    }) => updateTestCase(caseId, data),
+    retry: false,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['testing', 'suite', projectId] });
+    },
+  });
+}
+
+export function useDeleteTestCase(projectId: number) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (caseId: number) => deleteTestCase(caseId),
+    retry: false,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['testing', 'suite', projectId] });
     },
   });
 }
