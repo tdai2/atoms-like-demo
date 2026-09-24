@@ -1,18 +1,26 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
+  createBug,
   createProject,
   createTestCase,
+  deleteBug,
   deleteProject,
   deleteTestCase,
   executeTestRun,
+  fetchBugFixes,
+  fetchBugPanel,
   fetchPipeline,
   fetchProjects,
   fetchTestSuite,
+  fixBug,
   generateTestCases,
   isTransientGatewayError,
   PIPELINE_RETRY_LIMIT,
   retryProject,
+  updateBug,
   updateTestCase,
+  type BugInput,
+  type BugStatus,
   type CaseState,
   type TestCaseInput,
 } from '@/lib/projects';
@@ -165,5 +173,79 @@ export function useDeleteTestCase(projectId: number) {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['testing', 'suite', projectId] });
     },
+  });
+}
+
+/** 阶段五：缺陷面板快照（缺陷列表、状态统计与最近修复记录）。 */
+export function useBugPanel(projectId: number | null, enabled: boolean) {
+  return useQuery({
+    queryKey: ['bugs', 'panel', projectId],
+    queryFn: () => fetchBugPanel(projectId as number),
+    enabled: enabled && projectId !== null,
+    retry: retryTransient,
+    retryDelay,
+  });
+}
+
+export function useCreateBug(projectId: number) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (data: BugInput) => createBug(projectId, data),
+    retry: false,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['bugs', 'panel', projectId] });
+    },
+  });
+}
+
+export function useUpdateBug(projectId: number) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ bugId, data }: { bugId: number; data: Partial<BugInput> & { status?: BugStatus } }) =>
+      updateBug(bugId, data),
+    retry: false,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['bugs', 'panel', projectId] });
+    },
+  });
+}
+
+export function useDeleteBug(projectId: number) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (bugId: number) => deleteBug(bugId),
+    retry: false,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['bugs', 'panel', projectId] });
+    },
+  });
+}
+
+/**
+ * 自动修复会调用模型改写产物并上传新版本，因此禁用自动重试：
+ * 失败必须让用户看到真实结果，且不能对同一条缺陷发起并发修复。
+ * 成功后新产物带来新版本与新一次复测，因此同时刷新缺陷面板、测试面板与流水线。
+ */
+export function useFixBug(projectId: number) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (bugId: number) => fixBug(bugId),
+    retry: false,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['bugs', 'panel', projectId] });
+      queryClient.invalidateQueries({ queryKey: ['testing', 'suite', projectId] });
+      queryClient.invalidateQueries({ queryKey: ['generation'] });
+    },
+  });
+}
+
+/** 单条缺陷的完整修复历史，用于展开查看。 */
+export function useBugFixes(bugId: number | null, enabled: boolean) {
+  return useQuery({
+    queryKey: ['bugs', 'fixes', bugId],
+    queryFn: () => fetchBugFixes(bugId as number),
+    enabled: enabled && bugId !== null,
+    retry: retryTransient,
+    retryDelay,
   });
 }

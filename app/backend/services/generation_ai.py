@@ -23,6 +23,7 @@ logger = logging.getLogger(__name__)
 PARSE_MODEL = "deepseek-v4-flash"
 CODE_MODEL = "claude-opus-5"
 TEST_MODEL = "claude-opus-5"
+FIX_MODEL = "claude-opus-5"
 ENTRY_FILE = "index.html"
 
 # Hard ceiling for a single model call. A stalled upstream must fail the stage
@@ -392,3 +393,85 @@ async def write_test_cases(
     if len(cases) < minimum:
         raise GenerationAIError(f"测试用例输出不足 {minimum} 条（实际 {len(cases)} 条）")
     return cases[:12]
+
+
+# 缺陷修复允许送入模型的源码上限：单文件应用远超此值时无法在一次调用内可靠改写，
+# 直接给出可见错误，而不是把被截断的源码交给模型去「猜」剩余部分。
+FIX_SOURCE_LIMIT = 48000
+
+
+async def fix_application(
+    prompt: str,
+    spec: Dict[str, Any],
+    html: str,
+    bug_title: str,
+    bug_description: str = "",
+    reproduction: str = "",
+    related_case: str = "",
+    repair_hint: str = "",
+) -> Dict[str, Any]:
+    """按缺陷报告修复单文件应用，返回修复后的完整源码、修复说明与变更清单。
+
+    模型必须输出完整可运行源码而不是差异片段：产物是自包含单文件，差异片段既无法独立校验，
+    也无法用于后续的确定性复测。
+    """
+    source = (html or "").strip()
+    if len(source) > FIX_SOURCE_LIMIT:
+        raise GenerationAIError(
+            f"产物源码超过 {FIX_SOURCE_LIMIT} 字符，超出自动修复范围，请缩小应用规模后重试"
+        )
+    system = (
+        f"{_JSON_SYSTEM} 你是前端工程师，负责修复一个自包含单文件 Web 应用的缺陷。"
+        "输出字段：files（数组，首项必须是 path=index.html，content 为修复后的完整 HTML）、"
+        "summary（一句话说明这次修复做了什么）、changes（数组，3-6 条，逐条说明改动点）。"
+        "content 必须是完整可运行的 HTML：包含 <!DOCTYPE html>、<html lang>、<head>、<body>，"
+        "内联全部 CSS 与 JavaScript，不引用任何外部资源。"
+        "只做修复该缺陷所需的最小改动，必须保留原有页面、文案、交互与全部既有元素，"
+        "不得通过删除或隐藏元素来绕过缺陷。"
+    )
+    user = (
+        f"应用：{spec.get('display_name')}（{spec.get('app_name')}）\n"
+        f"原始需求：{prompt.strip()}\n"
+        f"缺陷标题：{bug_title}\n"
+        f"缺陷描述：{bug_description or '（未提供）'}\n"
+        f"复现步骤：{reproduction or '（未提供）'}\n"
+        f"关联用例断言（修复后必须仍然匹配）：{related_case or '（无）'}\n"
+        f"当前源码：\n{source}"
+        f"{repair_hint}"
+    )
+    payload = await _complete_json(system, user, FIX_MODEL, max_tokens=8192)
+    files = payload.get("files")
+    if not isinstance(files, list) or not files:
+        raise GenerationAIError("修复输出缺少文件内容")
+    content = ""
+    for item in files:
+        if (
+            isinstance(item, dict)
+            and str(item.get("path") or "").strip() == ENTRY_FILE
+            and isinstance(item.get("content"), str)
+        ):
+            content = item["content"].strip()
+            break
+    if not content:
+        first = next(
+            (
+                item
+                for item in files
+                if isinstance(item, dict) and isinstance(item.get("content"), str) and item["content"].strip()
+            ),
+            None,
+        )
+        content = str(first["content"]).strip() if first else ""
+    if not content:
+        raise GenerationAIError("修复输出中没有可用的入口文件内容")
+    missing = [tag for tag in ("<html", "</html>", "<body") if tag not in content.lower()]
+    if missing:
+        raise GenerationAIError(f"修复后的入口文件结构不完整，缺少 {'、'.join(missing)}")
+    changes = payload.get("changes")
+    return {
+        "content": content,
+        "summary": str(payload.get("summary") or "").strip(),
+        "changes": [str(item).strip() for item in changes if str(item).strip()][:8]
+        if isinstance(changes, list)
+        else [],
+    }

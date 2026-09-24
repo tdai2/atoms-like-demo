@@ -1,0 +1,50 @@
+{
+    "title": "bugs",
+    "type": "object",
+    "properties": {
+        "id": {
+            "type": "integer"
+        },
+        "user_id": {
+            "type": "string"
+        },
+        "project_id": {
+            "type": "integer"
+        },
+        "title": {
+            "type": "string"
+        },
+        "description": {
+            "type": "string"
+        },
+        "severity": {
+            "type": "string"
+        },
+        "reproduction": {
+            "type": "string"
+        },
+        "related_case_id": {
+            "type": "integer"
+        },
+        "status": {
+            "type": "string"
+        },
+        "fix_attempts": {
+            "type": "integer"
+        },
+        "latest_fix_id": {
+            "type": "integer"
+        },
+        "resolution": {
+            "type": "string"
+        },
+        "target_version": {
+            "type": "integer"
+        }
+    },
+    "required": [
+        "title",
+        "user_id",
+        "project_id"
+    ]
+}

@@ -1,0 +1,56 @@
+{
+    "title": "bug_fix_logs",
+    "type": "object",
+    "properties": {
+        "id": {
+            "type": "integer"
+        },
+        "user_id": {
+            "type": "string"
+        },
+        "project_id": {
+            "type": "integer"
+        },
+        "bug_id": {
+            "type": "integer"
+        },
+        "status": {
+            "type": "string"
+        },
+        "attempt_no": {
+            "type": "integer"
+        },
+        "model": {
+            "type": "string"
+        },
+        "source_version": {
+            "type": "integer"
+        },
+        "target_version": {
+            "type": "integer"
+        },
+        "artifact_key": {
+            "type": "string"
+        },
+        "changes_json": {
+            "type": "string"
+        },
+        "diff_summary": {
+            "type": "string"
+        },
+        "retest_json": {
+            "type": "string"
+        },
+        "error_message": {
+            "type": "string"
+        },
+        "duration_ms": {
+            "type": "integer"
+        }
+    },
+    "required": [
+        "user_id",
+        "project_id",
+        "bug_id"
+    ]
+}

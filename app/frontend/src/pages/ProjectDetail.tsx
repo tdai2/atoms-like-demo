@@ -2,9 +2,10 @@ import { useEffect } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { AlertTriangle, ArrowLeft, ExternalLink, Loader2, RefreshCw } from 'lucide-react';
 import SiteHeader from '@/components/SiteHeader';
+import BugPanel from '@/components/BugPanel';
 import TestSuitePanel from '@/components/TestSuitePanel';
 import { useAuthStatus } from '@/hooks/useAuthStatus';
-import { useProjectPipeline, useRetryProject } from '@/hooks/useProjects';
+import { useProjectPipeline, useRetryProject, useTestSuite } from '@/hooks/useProjects';
 import { apiErrorMessage, formatDateTime, type ProjectStatus, type StageState } from '@/lib/projects';
 import { cn } from '@/lib/utils';
 
@@ -46,6 +47,9 @@ export default function ProjectDetail() {
   const { state, login } = useAuthStatus();
   const pipeline = useProjectPipeline(valid ? projectId : null, state === 'authenticated');
   const retry = useRetryProject();
+  // 与测试面板共用同一份用例查询（同一 queryKey 会自动复用缓存），
+  // 缺陷表单据此提供「关联用例」选项，修复后也以该用例的复测结论为准。
+  const suite = useTestSuite(valid ? projectId : null, state === 'authenticated');
 
   useEffect(() => {
     window.scrollTo({ top: 0 });
@@ -357,6 +361,11 @@ export default function ProjectDetail() {
             )}
 
             <TestSuitePanel projectId={project.id} enabled={state === 'authenticated'} />
+            <BugPanel
+              projectId={project.id}
+              enabled={state === 'authenticated'}
+              cases={suite.data?.cases ?? []}
+            />
           </>
         )}
       </main>
