@@ -191,7 +191,9 @@ curl http://localhost:8000/database/health
 | `project_versions` | `user_id` `project_id` `version` `diff_summary` `files_key` | 版本链 |
 | `usage_quotas` | `user_id` `period` `plan` `used` `quota_limit` | 按自然月计数配额 |
 | `test_cases` | `user_id` `project_id` `title` `case_type` `preconditions` `steps` `expected` `assertion` `source` `case_state` | 项目测试用例。`case_type ∈ {structure, interaction, content}`；`source ∈ {auto, manual}`；`case_state ∈ {active, disabled}`，停用用例不参与执行；`assertion` 是可在产物源码中匹配的片段 |
-| `test_runs` | `user_id` `project_id` `status` `triggered_by` `total` `passed` `failed` `duration_ms` `results_json` `error_message` | 每次测试执行的统计与逐用例结果。`status ∈ {passed, failed}`，`triggered_by` 记录发起人，`results_json` 保存逐例明细 |
+| `test_runs` | `user_id` `project_id` `status` `triggered_by` `total` `passed` `failed` `duration_ms` `results_json` `error_message` | 每次测试执行的统计与逐用例结果。`status ∈ {passed, failed}`，`triggered_by` 记录发起人（手动执行或修复后复测），`results_json` 保存逐例明细 |
+| `bugs` | `user_id` `project_id` `title` `description` `severity` `steps` `status` `linked_case_id` `fix_attempts` `last_fix_at` | 用户提交的缺陷。`severity ∈ {low, medium, high, critical}`；`status ∈ {open, fixing, fixed, fix_failed, closed}`，`fixing` 为修复期间的并发锁；`linked_case_id` 指向用于复测的用例 |
+| `bug_fix_logs` | `user_id` `project_id` `bug_id` `attempt` `status` `source_version` `target_version` `model` `retest_run_id` `retest_passed` `retest_total` `error_message` | 每次修复尝试的源 / 目标版本、结论与复测结果，构成可展开的修复历史 |
 
 约定：
 
@@ -342,6 +344,33 @@ curl http://localhost:8000/database/health
 `PUT /batch`、`DELETE /{id}`、`DELETE /batch`。列表支持 `query`（JSON 过滤）、`sort`
 （`-` 前缀降序）、`skip`、`limit`（≤2000）、`fields`。写入与删除均校验 `user_id` 归属。
 
+### 缺陷与修复 `/api/v1/bugs`
+
+| 方法 | 路径 | 说明 |
+|------|------|------|
+| GET | `/projects/{project_id}` | 缺陷面板快照：缺陷列表、状态统计与修复历史入口 |
+| POST | `/projects/{project_id}` | 提交缺陷（标题、描述、严重级别、复现步骤、可选关联用例） |
+| PUT | `/{bug_id}` | 编辑缺陷；修复中（`fixing`）不接受手动状态覆盖 |
+| DELETE | `/{bug_id}` | 删除缺陷 |
+| POST | `/{bug_id}/fix` | 触发自动修复（同步阻塞完成一次修复尝试），修复期间拒绝并发触发 |
+| GET | `/{bug_id}/fixes` | 修复历史（按尝试序号倒序） |
+
+自动修复链路（`services/bug_fix.py`）：
+
+```
+① 短事务：校验产物与关联用例 → 缺陷置 fixing（并发锁）、attempt +1
+② 无数据库连接：回读当前产物 → 模型改写代码（180s 硬超时）
+③ 短事务：新版本上传与可达性校验通过 → 落 project_versions 并前移 projects.artifact_key
+④ 在新产物上重跑该项目启用用例（triggered_by="fix"）→ 回写复测结论与缺陷状态
+```
+
+判定与失败口径：
+
+- **修复是否成功由第 ④ 步的真实复测结论决定**，模型返回「已修复」不作为依据；复测有失败用例或复测无法执行即判定修复失败。
+- 第 ②/③ 步失败（模型额度不足、上游异常、上传或可达性校验失败）时写入一条失败修复记录，缺陷落到 `fix_failed`，**项目版本与 `artifact_key` 指针保持原值**，用户可重试。
+- 没有 `artifact_key` 的项目拒绝提交缺陷；`linked_case_id` 必须属于同一项目且同一用户，否则拒绝。
+- 所有接口按 `current_user.id` 过滤，跨用户访问返回 404；删除项目会一并清理该项目的缺陷与修复记录。
+
 ### AI 能力 `/api/v1/aihub`
 
 | 方法 | 路径 | 说明 |
@@ -401,6 +430,7 @@ curl http://localhost:8000/database/health
 - 上传：取预签名上传地址后 `PUT` 内容，`Content-Type: text/html; charset=utf-8`。
 - 回读：取下载地址后 `GET`，用于构建校验与测试验证。
 - 发布：`public_url()` 解析出可访问地址，`is_reachable()` 校验 200 且响应含 `<html` 才允许发布。
+- 删除：`delete_object(object_key)` 作为产物回收的统一下沉入口，供版本清理与验证数据回收复用。
 - 库内只存 `artifact_key`；签名地址有时效，落库会过期，因此每次请求即时解析。
 
 `services/storage.py` 基于平台 OSS 服务封装：统一 `Authorization: Bearer <OSS_API_KEY>`，
@@ -456,6 +486,7 @@ python -c "import main; import services.generation; import services.pipeline_run
 | `verify_quota_refund.py` | 模型失败路径：额度回到 `0/20`、无残留项目、无残留阶段任务 |
 | `verify_gateway_timeout.py` | HTTP 级：创建耗时、轮询耗时、并发轮询、无 5xx、无 `QueuePool` 超时 |
 | `verify_test_suite.py` | 阶段四测试链路：无产物项目拒绝生成与执行、通过/失败统计与产物一致、停用用例被排除、运行历史倒序、跨用户项目与运行访问均被拒、删除用例不影响历史、项目删除后用例与运行清理干净 |
+| `verify_bug_fix.py` | 阶段五缺陷链路：无产物项目拒绝提交缺陷、无效关联用例被拒、产物不可读时失败修复如实落库且项目版本与产物指针不变、面板统计与缺陷状态一致、编辑/关闭/重开生效、跨用户读取面板与修复历史被拒、真模型修复成功时产出新版本并按关联用例给出复测结论（余额不足时明确跳过）、项目删除后缺陷与修复记录清零、验证自建对象回收 |
 
 注意：脚本依赖平台 AI 额度；额度不足时失败原因是 `insufficient_ai_balance`（HTTP 403），
 属于外部额度问题而非代码缺陷，此时阶段会落为可见失败并触发首轮退款。

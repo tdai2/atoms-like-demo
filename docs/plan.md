@@ -70,7 +70,9 @@
 | `build_tasks` | `id` `user_id` `project_id` `run_no` `stage` `stage_name` `stage_order` `stage_state` `stage_log` `error_message` `output_summary` | 驱动生成时间线，按 `run_no` 分批 |
 | `usage_quotas` | `user_id` `period` `plan` `used` `quota_limit` | 按自然月限制生成次数 |
 | `test_cases` | `id` `user_id` `project_id` `title` `case_type` `preconditions` `steps` `expected` `assertion` `source` `case_state` | 项目测试用例；`source` 区分自动生成与手动新增，`assertion` 是可在产物源码中匹配的断言片段 |
-| `test_runs` | `id` `user_id` `project_id` `status` `triggered_by` `total` `passed` `failed` `duration_ms` `results_json` `error_message` | 每次测试执行的统计与逐用例结果，构成可追溯的测试历史 |
+| `test_runs` | `id` `user_id` `project_id` `status` `triggered_by` `total` `passed` `failed` `duration_ms` `results_json` `error_message` | 每次测试执行的统计与逐用例结果，构成可追溯的测试历史；`triggered_by` 区分手动执行与修复后复测 |
+| `bugs` | `id` `user_id` `project_id` `title` `description` `severity` `steps` `status` `linked_case_id` `fix_attempts` `last_fix_at` | 用户提交的缺陷；`status ∈ {open, fixing, fixed, fix_failed, closed}`，`linked_case_id` 关联用于复测的测试用例 |
+| `bug_fix_logs` | `id` `user_id` `project_id` `bug_id` `attempt` `status` `source_version` `target_version` `model` `retest_run_id` `retest_passed` `retest_total` `error_message` | 每次修复尝试的源 / 目标版本、结论与复测结果，构成修复历史 |
 | `users`、`oidc_states` | `id`(=平台 `sub`) `email` `role` / `state` `nonce` `code_verifier` `expires_at` | 平台身份映射与登录临时数据，详见 `docs/backend.md` |
 
 文件产物不入库，存对象存储，库中只保留对象键（`artifact_key` / `files_key`）。`projects.preview_url` 字段保留但**不写入签名地址**：签名链接会过期，预览地址每次请求按 `artifact_key` 即时解析。模板库是后端确定性数据（`GET /api/v1/generation/templates/{key}`），不单独建表。
@@ -88,6 +90,7 @@
 | 项目页面 | 我的项目列表与项目详情（流水线快照、方案、测试报告、版本、重试、删除） | `src/pages/Projects.tsx`、`src/pages/ProjectDetail.tsx` |
 | 账号与入口 | 账号三态、登录 / 注册 / 登出回跳、免费开始意图消费 | `src/hooks/useAuthStatus.ts`、`src/pages/SignIn.tsx`、`src/pages/SignUp.tsx`、`src/pages/LogoutCallbackPage.tsx`、`src/lib/startFree.ts` |
 | 测试面板 | 用例生成、执行、运行历史与手动增删改用例 | `src/components/TestSuitePanel.tsx` |
+| 缺陷面板 | 缺陷提交、编辑、状态流转、自动修复、修复历史与关联用例 | `src/components/BugPanel.tsx` |
 | 占位页 | 未建设模块的统一说明，模板详情复用 | `src/pages/Placeholder.tsx` |
 | 静态数据 | 预设提示词、构建步骤、模板、能力、定价、发布记录 | `src/data/site.ts`、`src/data/changelog.ts` |
 | 设计系统 | 颜色、字体、网格背景、动效 | `src/index.css` `DESIGN.md` |
@@ -101,8 +104,9 @@
 | 生成编排 | 创建生成任务、推进阶段、写入状态 | `POST /api/v1/generation/projects`、`GET /api/v1/generation/projects/{id}`、`POST /projects/{id}/retry` |
 | 方案推导 | 由需求文本经模型推导页面、实体与技术栈 | `services/generation_ai.py`（`deepseek-v4-flash` 解析、`claude-opus-5` 规划） |
 | 后台执行 | 进程内工作器推进阶段、项目去重、启动恢复未完成项目 | `services/pipeline_runner.py` |
-| 实体 CRUD | 六张表的自动生成路由，均按用户隔离 | `/api/v1/entities/{projects,build_tasks,project_versions,usage_quotas,test_cases,test_runs}` |
+| 实体 CRUD | 八张表的自动生成路由，均按用户隔离 | `/api/v1/entities/{projects,build_tasks,project_versions,usage_quotas,test_cases,test_runs,bugs,bug_fix_logs}` |
 | 测试能力 | 用例生成与手动维护、真实产物上的确定性执行、运行历史查询 | `services/test_suite.py`、`routers/test_suite.py`；`/api/v1/testing/*` |
+| 缺陷与修复 | 缺陷 CRUD 与状态流转、自动修复编排、修复历史查询、项目级清理 | `services/bug_fix.py`、`routers/bug_fix.py`；`/api/v1/bugs/*` |
 | 产物存储 | HTML 上传、回读校验、预览地址解析与可达性检查 | `services/generation_artifacts.py`、`services/storage.py`；bucket `generation-artifacts` |
 | 配额 | 按自然月校验与计数，条件原子扣减 + 失败退款 | `services/generation.py` 的 `get_or_create_quota` / `consume_quota` / `refund_quota` |
 
@@ -168,7 +172,7 @@
 | 二（已完成） | 激活后端，落地账号、项目表、生成接口 | 登录后能看到自己的项目列表             |
 | 三（已完成） | 接入真实模型生成、后台异步执行与可靠性加固 | 输入任意需求产出可访问链接             |
 | 四（已完成） | 测试用例生成、执行与结果记录 | 可以自动或手动生成测试用例，执行并查询历史测试记录 |
-| 五 | Bug 提交、记录与自动修复 | 能提交 bug、记录 bug，并尝试自行解决    |
+| 五（已完成） | Bug 提交、记录与自动修复 | 能提交 bug、记录 bug，并尝试自行解决    |
 | 六 | 对话式增量修改、版本回溯 | 追加需求只改动对应部分               |
 | 七 | 自定义域名、团队协作与权限 | 项目可对外正式发布                 |
 
@@ -199,7 +203,7 @@
 | 我的项目列表页（加载 / 未登录 / 空列表 / 失败重试 / 成功列表） | `src/pages/Projects.tsx` |
 | 项目详情页（流水线快照、方案、测试报告、失败重试） | `src/pages/ProjectDetail.tsx` |
 | 首页生成链路改为创建任务 + 轮询服务端阶段状态 | `src/pages/Index.tsx` |
-| 更新日志页与发布记录数据源（最新 `v0.9.0` 覆盖测试用例与执行闭环） | `src/pages/Changelog.tsx`、`src/data/changelog.ts` |
+| 更新日志页与发布记录数据源（最新 `v0.10.0` 覆盖缺陷提交与自动修复） | `src/pages/Changelog.tsx`、`src/data/changelog.ts` |
 | 顶栏账号区（登录 / 免费开始 / 账号邮箱 / 退出登录）与登出降级 | `src/components/SiteHeader.tsx`、`src/hooks/useAuthStatus.ts`、`app/backend/routers/auth.py` |
 
 验证方式：后端 Python 语法检查通过；`pnpm run lint` 与 `pnpm run build` 通过。
@@ -237,9 +241,26 @@
 
 验证方式：`verify_test_suite.py`（无产物项目拒绝生成与执行、通过 / 失败统计与产物一致、停用用例被排除、运行历史倒序、跨用户隔离、删除用例不影响历史、项目删除清理干净）与后端 `py_compile`、前端 `pnpm run lint && pnpm run build`。用例生成的真实模型调用同样受平台 AI 余额约束，余额不足时会明确失败而不是伪造通过。
 
+### 阶段五交付清单
+
+| 交付项 | 落地位置 |
+|--------|---------|
+| 缺陷与修复记录数据表：`bugs`（状态、严重级别、关联用例、尝试次数）、`bug_fix_logs`（尝试序号、源 / 目标版本、复测结论） | `app/backend/models/bugs.py`、`models/bug_fix_logs.py` |
+| 缺陷 CRUD 与状态流转：创建、编辑、关闭、重开、删除，提交前校验项目是否已有真实产物、关联用例是否属于本项目 | `app/backend/services/bug_fix.py`、`routers/bug_fix.py` |
+| 自动修复编排：短事务置「修复中」并拒绝并发 → 回读产物交模型改写（不持有事务）→ 新版本上传与可达性校验 → 短事务落版本并前移项目指针 → 在新产物上重跑启用用例复测 → 回写复测结论与缺陷状态 | `app/backend/services/bug_fix.py`、`services/generation_ai.py` |
+| 失败如实落库：模型或对象存储失败写入一条失败修复记录，缺陷停在 `fix_failed`，**不改动项目版本与产物指针** | `app/backend/services/bug_fix.py` |
+| 修复历史：每次尝试的结论、源 / 目标版本与复测结果可查询 | `GET /api/v1/bugs/{bug_id}/fixes` |
+| 缺陷接口：面板快照、创建、更新、删除、触发修复、修复历史 | `GET, POST /api/v1/bugs/projects/{id}`、`PUT, DELETE /api/v1/bugs/{bug_id}`、`POST /api/v1/bugs/{bug_id}/fix`、`GET /api/v1/bugs/{bug_id}/fixes` |
+| 项目详情页缺陷面板：提交、编辑、严重级别与关联用例、自动修复、关闭重开、删除确认、修复历史展开与状态统计 | `src/components/BugPanel.tsx`、`src/pages/ProjectDetail.tsx` |
+| 修复后复测以 `triggered_by="fix"` 落库，测试面板标注为「修复后复测」 | `app/backend/services/test_suite.py`、`src/components/TestSuitePanel.tsx` |
+| 产物删除统一下沉入口，供版本清理与验证数据回收复用 | `app/backend/services/generation_artifacts.py` 的 `delete_object` |
+| 项目删除同步清理缺陷与修复记录 | `app/backend/services/bug_fix.py` 的项目级清理 |
+
+验证方式：`verify_bug_fix.py`（无产物项目拒绝提交、无效关联用例被拒、产物不可读时失败修复如实落库且项目版本与产物指针不变、面板统计与状态一致、编辑 / 关闭 / 重开生效、跨用户读取面板与修复历史被拒、项目删除后缺陷与修复记录清零、验证对象回收）与后端 `py_compile`、前端 `pnpm run lint && pnpm run build`。真模型修复成功分支同样受平台 AI 余额约束，余额不足时脚本明确跳过而不伪造成功。
+
 ### 未完成事项
 
 - 生产启动脚本 `app/start_app_v2.sh` 的后端命令仍带 `--reload`，生产部署需去掉。
-- 删除项目目前只清理业务表，不清理对象存储产物，会产生孤儿对象。
+- 删除项目目前只清理业务表，不清理对象存储产物，会产生孤儿对象（历史遗留的 `projects/2/v1/index.html` 仍待清理）。
 - 进程内后台工作器适合常驻进程；若改为无服务器形态，需评估请求结束后任务被冻结的风险。
 - 历史额度消耗与项目记录不一致的排查结论见 `.atoms/PROGRESS.md`。

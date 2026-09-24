@@ -25,7 +25,7 @@
 |------|---------|------|
 | `/` | `pages/Index.tsx` | 已实现：需求输入台、六阶段时间线、iframe 预览窗、能力、模板库、定价、CTA |
 | `/projects` | `pages/Projects.tsx` | 已实现：当前账号项目列表、额度用量、删除 |
-| `/projects/:id` | `pages/ProjectDetail.tsx` | 已实现：六阶段快照、方案、测试报告、版本、失败重试 |
+| `/projects/:id` | `pages/ProjectDetail.tsx` | 已实现：六阶段快照、方案、测试报告、版本、失败重试、测试面板与缺陷修复面板 |
 | `/signin` | `pages/SignIn.tsx` | 已实现：调起平台账号登录 |
 | `/signup` | `pages/SignUp.tsx` | 已实现：注册入口，调起平台账号页完成注册 |
 | `/auth/callback` | `pages/AuthCallback.tsx` | 平台只读文件，不修改 |
@@ -52,8 +52,9 @@
 |------|------|
 | `src/pages/Index.tsx` | 首页与生成链路：输入台、服务端阶段轮询、iframe 预览窗、模板库、定价、CTA |
 | `src/pages/Projects.tsx` | 我的项目列表：加载 / 未登录 / 空列表 / 失败重试 / 成功列表与额度 |
-| `src/pages/ProjectDetail.tsx` | 项目详情：六阶段流水线快照、方案、测试报告、版本、重试与测试面板入口 |
-| `src/components/TestSuitePanel.tsx` | 阶段四测试面板：用例生成与手动增删改、执行、结果统计与运行历史切换 |
+| `src/pages/ProjectDetail.tsx` | 项目详情：六阶段流水线快照、方案、测试报告、版本、重试、测试面板与缺陷修复面板 |
+| `src/components/TestSuitePanel.tsx` | 阶段四测试面板：用例生成与手动增删改、执行、结果统计、运行历史切换与「修复后复测」标注 |
+| `src/components/BugPanel.tsx` | 阶段五缺陷面板：提交与编辑缺陷、严重级别与关联用例、自动修复、关闭重开、删除确认、修复历史与状态统计 |
 | `src/pages/Changelog.tsx` | 更新日志页：类型筛选计数、版本锚点、发布记录时间线、`LATEST` 标记 |
 | `src/pages/Placeholder.tsx` | 未建设模块的统一说明页，模板详情复用 |
 | `src/pages/SignIn.tsx`、`src/pages/SignUp.tsx` | 平台账号登录与注册入口 |
@@ -103,9 +104,15 @@
 | `deleteTestCase(caseId)` | `DELETE` | `/api/v1/testing/cases/{caseId}` |
 | `runTestSuite(id)` | `POST` | `/api/v1/testing/projects/{id}/runs` |
 | `fetchTestRun(runId)` | `GET` | `/api/v1/testing/runs/{runId}` |
+| `fetchBugPanel(id)` | `GET` | `/api/v1/bugs/projects/{id}` |
+| `createBug(id, payload)` | `POST` | `/api/v1/bugs/projects/{id}` |
+| `updateBug(bugId, payload)` | `PUT` | `/api/v1/bugs/{bugId}` |
+| `deleteBug(bugId)` | `DELETE` | `/api/v1/bugs/{bugId}` |
+| `fixBug(bugId)` | `POST` | `/api/v1/bugs/{bugId}/fix` |
+| `fetchBugFixes(bugId)` | `GET` | `/api/v1/bugs/{bugId}/fixes` |
 
 所有请求通过 `client.apiCall.invoke()` 发出，不在前端直连数据库或另建 fetch 封装。
-生成类请求超时为 `PIPELINE_TIMEOUT_MS = 60_000`；列表、版本与删除使用 SDK 默认超时。
+生成类请求超时为 `PIPELINE_TIMEOUT_MS = 60_000`，测试执行（生成用例与运行）为 `TEST_TIMEOUT_MS = 120_000`，自动修复为 `BUG_TIMEOUT_MS = 240_000`（后端模型改写硬超时 `180s`，需留出上传与复测余量）；列表、版本与删除使用 SDK 默认超时。
 
 ### 轮询与错误处理（`src/hooks/useProjects.ts`、`src/lib/projects.ts`）
 
@@ -113,6 +120,8 @@
 - 网关瞬时故障（`408` / `429` / `502` / `503` / `504`，或网络层 `network error` / `timeout` / `failed to fetch` / `ECONNRESET` / `socket hang up`）由 `isTransientGatewayError()` 判定为可重试。
 - 可重试错误按指数退避重试：`min(1000 × 2^attemptIndex, 8000)` 毫秒，最多 `PIPELINE_RETRY_LIMIT = 4` 次；其余错误立即暴露给用户，避免把真实业务失败拖成等待。
 - 创建、重试、删除成功后失效 `['generation','projects']` 查询；重试成功还会直接写入 `['generation','pipeline', id]` 缓存，避免等待一次往返。
+- 自动修复（`useFixBug`）**不启用自动重试**：修复会改写产物并消耗模型调用，自动重试会重复触发；成功后同时失效缺陷面板、测试面板与流水线三处缓存，让新版本、复测结论与修复历史一起刷新。
+- 其余阶段五 mutations（创建、编辑、删除缺陷）成功后失效缺陷面板缓存；修复历史按需查询，不参与列表轮询。
 - 展示给用户的错误文案由 `apiErrorMessage()` 从响应体 `detail` 或 `message` 中提取。
 
 ### 响应式状态
@@ -133,7 +142,7 @@
 - 语义化标签与充足对比度；键盘焦点环可见；支持 `prefers-reduced-motion`，系统减弱动效时停用背景动画。
 - `index.html` 中的标题、描述与 logo 由概览系统通过 `data-mgx-overview` 标记管理，不手动修改。
 - `src/pages/AuthCallback.tsx` 为平台只读文件，不做修改。
-- 发布记录集中在 `src/data/changelog.ts`：新增版本时在数组**最前面**追加一条 `Release`，页面自动置顶并标记 `LATEST`，类型筛选计数与版本跳转同步更新；文档侧同步 `docs/changelog.md`。当前最新为 `v0.9.0`（测试用例与执行闭环）。
+- 发布记录集中在 `src/data/changelog.ts`：新增版本时在数组**最前面**追加一条 `Release`，页面自动置顶并标记 `LATEST`，类型筛选计数与版本跳转同步更新；文档侧同步 `docs/changelog.md`。当前最新为 `v0.10.0`（缺陷提交与自动修复）。
 - 不在前端硬编码登录态相关的入口（如页脚「登录」），账号入口统一由 `SiteHeader` 的账号区表达。
 
 ## 七、构建配置要点
@@ -161,9 +170,8 @@ pnpm run preview  # 预览构建产物
 
 ## 九、后续阶段
 
-阶段四（测试用例生成、执行与历史记录）已完成，测试面板已接入项目详情页，可自动或手动生成用例、执行并回溯历史结果。
+阶段四（测试用例生成、执行与历史记录）与阶段五（缺陷提交、自动修复与修复后复测）已完成，项目详情页已接入测试面板与缺陷修复面板：可自动或手动生成用例、执行并回溯历史结果，也可提交缺陷、触发自动修复并在修复后复测中看到结论。
 
-- 阶段五：Bug 提交、记录与自动修复。
 - 阶段六：对话式增量修改与版本回溯（前端需新增对话式编辑入口与版本对比视图）。
 - 阶段七：自定义域名、团队协作与权限。
 
