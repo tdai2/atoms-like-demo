@@ -72,6 +72,16 @@ last_updated: 2026-09-22T07:20:00Z
 | P3-8 | 文档归档：前端开发文档与更新日志文档迁入 `docs/`（`docs/frontend.md`、`docs/changelog.md`），根 README、`.wiki.md` 与 `.atoms/ARCHITECTURE.md` 索引同步 | Alex | done | V3-3 |
 | P3-9 | 更新日志补齐 `v0.8.0`（真实生成与可访问产物）：真实模型六阶段、对象存储 iframe 预览、后台异步执行、配额退款、542/502 修复等阶段三交付，`docs/changelog.md` 与数据源同步 | Alex | done | P3-8 |
 | P3-10 | 后续阶段顺序调整：原阶段四（对话式增量修改与版本回溯）后移至阶段六，测试用例生成与 Bug 自动修复各前移一阶段；`docs/plan.md`、`docs/frontend.md`、`app/frontend/README.md`、`docs/mission.md` 与上下文文件同步 | Alex | done | P3-9 |
+| P4-1 | 测试用例与运行记录数据表：`test_cases`、`test_runs` 按用户隔离重建，并与平台流程适配（`source` 区分自动/手动、`case_state` 控制启用、`results_json` 存逐例明细） | Alex | done | P3-10 |
+| P4-2 | 测试用例生成：基于已落库方案与对象存储回读的真实产物，由 `claude-opus-5` 产出 6-10 条结构化用例，重复生成替换自动用例并保留手动用例 | Alex | done | P4-1 |
+| P4-3 | 测试执行服务：在当前产物源码上做确定性断言匹配，产出总数/通过数/失败数/耗时与逐例结果；停用用例不参与执行 | Alex | done | P4-2 |
+| P4-4 | 测试接口与用例 CRUD：面板快照、生成、新增、编辑、启用停用、删除、执行与单次运行详情，全部按用户隔离 | Alex | done | P4-3 |
+| P4-5 | 项目删除同步清理测试用例与运行记录 | Alex | done | P4-4 |
+| P4-6 | 前端接口层与 mutations：测试套件查询、生成、CRUD、执行与运行详情接入 `src/lib/projects.ts`、`src/hooks/useProjects.ts` | Alex | done | P4-4 |
+| P4-7 | 项目详情页测试面板：生成、执行、结果统计、运行历史切换、手动增删改，覆盖加载/无产物/无用例/失败/成功态 | Alex | done | P4-6 |
+| V4-1 | 阶段四链路验证 `verify_test_suite.py`：无产物项目拒绝生成与执行、通过/失败统计与产物一致、停用用例被排除、运行历史倒序、跨用户项目与运行访问均被拒、删除用例不影响历史、项目删除后清理干净 | Alex | done | P4-7 |
+| V4-2 | 后端语法与路由导入检查（14 个路由模块全部导入成功）、前端 `pnpm run lint && pnpm run build` 通过 | Alex | done | P4-7 |
+| P4-8 | 文档同步：`docs/plan.md`（数据模型、模块划分、阶段四交付清单）、`docs/backend.md`（数据模型、测试接口清单、验证脚本）、`docs/frontend.md` 与 `app/frontend/README.md`（关键文件、接口契约、测试能力说明） | Alex | done | V4-2 |
 
 ## Progress Log
 

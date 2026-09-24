@@ -69,6 +69,8 @@
 | `project_versions` | `id` `user_id` `project_id` `version` `diff_summary` `files_key` | 版本链，支持回溯 |
 | `build_tasks` | `id` `user_id` `project_id` `run_no` `stage` `stage_name` `stage_order` `stage_state` `stage_log` `error_message` `output_summary` | 驱动生成时间线，按 `run_no` 分批 |
 | `usage_quotas` | `user_id` `period` `plan` `used` `quota_limit` | 按自然月限制生成次数 |
+| `test_cases` | `id` `user_id` `project_id` `title` `case_type` `preconditions` `steps` `expected` `assertion` `source` `case_state` | 项目测试用例；`source` 区分自动生成与手动新增，`assertion` 是可在产物源码中匹配的断言片段 |
+| `test_runs` | `id` `user_id` `project_id` `status` `triggered_by` `total` `passed` `failed` `duration_ms` `results_json` `error_message` | 每次测试执行的统计与逐用例结果，构成可追溯的测试历史 |
 | `users`、`oidc_states` | `id`(=平台 `sub`) `email` `role` / `state` `nonce` `code_verifier` `expires_at` | 平台身份映射与登录临时数据，详见 `docs/backend.md` |
 
 文件产物不入库，存对象存储，库中只保留对象键（`artifact_key` / `files_key`）。`projects.preview_url` 字段保留但**不写入签名地址**：签名链接会过期，预览地址每次请求按 `artifact_key` 即时解析。模板库是后端确定性数据（`GET /api/v1/generation/templates/{key}`），不单独建表。
@@ -85,6 +87,7 @@
 | 真实预览 | iframe 加载对象存储产物地址，含加载、空地址与失败状态 | `src/pages/Index.tsx`、`src/pages/ProjectDetail.tsx` |
 | 项目页面 | 我的项目列表与项目详情（流水线快照、方案、测试报告、版本、重试、删除） | `src/pages/Projects.tsx`、`src/pages/ProjectDetail.tsx` |
 | 账号与入口 | 账号三态、登录 / 注册 / 登出回跳、免费开始意图消费 | `src/hooks/useAuthStatus.ts`、`src/pages/SignIn.tsx`、`src/pages/SignUp.tsx`、`src/pages/LogoutCallbackPage.tsx`、`src/lib/startFree.ts` |
+| 测试面板 | 用例生成、执行、运行历史与手动增删改用例 | `src/components/TestSuitePanel.tsx` |
 | 占位页 | 未建设模块的统一说明，模板详情复用 | `src/pages/Placeholder.tsx` |
 | 静态数据 | 预设提示词、构建步骤、模板、能力、定价、发布记录 | `src/data/site.ts`、`src/data/changelog.ts` |
 | 设计系统 | 颜色、字体、网格背景、动效 | `src/index.css` `DESIGN.md` |
@@ -98,7 +101,8 @@
 | 生成编排 | 创建生成任务、推进阶段、写入状态 | `POST /api/v1/generation/projects`、`GET /api/v1/generation/projects/{id}`、`POST /projects/{id}/retry` |
 | 方案推导 | 由需求文本经模型推导页面、实体与技术栈 | `services/generation_ai.py`（`deepseek-v4-flash` 解析、`claude-opus-5` 规划） |
 | 后台执行 | 进程内工作器推进阶段、项目去重、启动恢复未完成项目 | `services/pipeline_runner.py` |
-| 实体 CRUD | 四张表的自动生成路由，均按用户隔离 | `/api/v1/entities/{projects,build_tasks,project_versions,usage_quotas}` |
+| 实体 CRUD | 六张表的自动生成路由，均按用户隔离 | `/api/v1/entities/{projects,build_tasks,project_versions,usage_quotas,test_cases,test_runs}` |
+| 测试能力 | 用例生成与手动维护、真实产物上的确定性执行、运行历史查询 | `services/test_suite.py`、`routers/test_suite.py`；`/api/v1/testing/*` |
 | 产物存储 | HTML 上传、回读校验、预览地址解析与可达性检查 | `services/generation_artifacts.py`、`services/storage.py`；bucket `generation-artifacts` |
 | 配额 | 按自然月校验与计数，条件原子扣减 + 失败退款 | `services/generation.py` 的 `get_or_create_quota` / `consume_quota` / `refund_quota` |
 
@@ -217,6 +221,21 @@
 验证方式：`verify_stage3.py`（真实 AI、上传 `200`、回读成功、预览地址 `200`、无 iframe 阻断头）、`verify_pipeline.py`（状态 `succeeded`、结构校验 `5/5`、冒烟 `4/4`、版本与重试不重复扣额）、`verify_quota_refund.py`（模型失败退款且无残留）、`verify_gateway_timeout.py`（创建与并发轮询耗时、无 `5xx`）。
 
 阶段三起预览地址按对象键即时解析，`projects.preview_url` 不落库；重试复用已落库的 `spec_json`，不再重复消耗解析阶段。生成接口与配额校验的契约保持不变，前端调用方式未改动。
+
+### 阶段四交付清单
+
+| 交付项 | 落地位置 |
+|--------|---------|
+| 测试用例生成：基于已落库方案与对象存储回读的真实产物，由 `claude-opus-5` 产出 6-10 条用例 | `app/backend/services/generation_ai.py` 的 `write_test_cases`、`app/backend/services/test_suite.py` 的 `generate_cases` |
+| 用例字段契约：标题、类型（结构 / 交互 / 内容）、前置条件、步骤、预期、断言片段、来源、启用状态 | `app/backend/models/test_cases.py` |
+| 真实执行：在产物源码上做确定性断言匹配，通过与否由产物决定，不由模型判定 | `app/backend/services/test_suite.py` 的 `execute_run` |
+| 执行记录：状态、总数、通过数、失败数、耗时、逐用例结果与失败原因 | `app/backend/models/test_runs.py` |
+| 用例手动维护：新增、编辑、启用 / 停用、删除；停用用例不参与执行 | `app/backend/routers/test_suite.py` |
+| 测试接口：面板快照、生成用例、用例 CRUD、执行、单次运行详情 | `GET /api/v1/testing/projects/{id}/suite`、`POST /cases/generate`、`POST /cases`、`PUT/DELETE /cases/{id}`、`POST /runs`、`GET /runs/{id}` |
+| 项目详情页测试面板：生成、执行、结果统计、运行历史切换、手动增删改、加载 / 空 / 错误 / 成功态 | `src/components/TestSuitePanel.tsx`、`src/pages/ProjectDetail.tsx` |
+| 项目删除同步清理测试用例与运行记录 | `app/backend/services/test_suite.py` 的 `purge_project_tests` |
+
+验证方式：`verify_test_suite.py`（无产物项目拒绝生成与执行、通过 / 失败统计与产物一致、停用用例被排除、运行历史倒序、跨用户隔离、删除用例不影响历史、项目删除清理干净）与后端 `py_compile`、前端 `pnpm run lint && pnpm run build`。用例生成的真实模型调用同样受平台 AI 余额约束，余额不足时会明确失败而不是伪造通过。
 
 ### 未完成事项
 

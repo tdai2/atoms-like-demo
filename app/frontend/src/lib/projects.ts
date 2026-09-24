@@ -165,6 +165,131 @@ export async function deleteProject(projectId: number): Promise<void> {
   });
 }
 
+export type CaseType = 'structure' | 'behavior' | 'content';
+export type CaseState = 'active' | 'disabled';
+export type RunStatus = 'passed' | 'failed';
+
+/** 阶段四：一条可自动执行的测试用例。 */
+export interface TestCase {
+  id: number;
+  project_id: number;
+  title: string;
+  case_type: CaseType;
+  preconditions: string;
+  steps: string;
+  expected: string;
+  assertion: string;
+  source: 'auto' | 'manual';
+  case_state: CaseState;
+}
+
+/** 阶段四：单条用例在某次运行中的真实结果。 */
+export interface CaseResult {
+  case_id: number;
+  title: string;
+  case_type: CaseType;
+  passed: boolean;
+  detail: string;
+}
+
+/** 阶段四：一次执行记录，含统计与逐用例结果。 */
+export interface TestRun {
+  id: number;
+  project_id: number;
+  status: RunStatus;
+  triggered_by: string;
+  total: number;
+  passed: number;
+  failed: number;
+  duration_ms: number;
+  results: CaseResult[];
+  created_at: string | null;
+}
+
+export interface TestSuite {
+  project_id: number;
+  artifact_ready: boolean;
+  cases: TestCase[];
+  latest_run: TestRun | null;
+  runs: TestRun[];
+}
+
+export interface TestCaseInput {
+  title: string;
+  case_type: CaseType;
+  preconditions?: string;
+  steps?: string;
+  expected?: string;
+  assertion: string;
+}
+
+/** 测试用例生成与执行会调用模型或回读对象存储，给足超时余量。 */
+export const TEST_TIMEOUT_MS = 120_000;
+
+export async function fetchTestSuite(projectId: number): Promise<TestSuite> {
+  const response = await client.apiCall.invoke({
+    url: `/api/v1/testing/projects/${projectId}/suite`,
+    method: 'GET',
+    data: {},
+  });
+  return response.data as TestSuite;
+}
+
+export async function generateTestCases(projectId: number): Promise<TestSuite> {
+  const response = await client.apiCall.invoke({
+    url: `/api/v1/testing/projects/${projectId}/cases/generate`,
+    method: 'POST',
+    data: {},
+    options: { timeout: TEST_TIMEOUT_MS },
+  });
+  return response.data as TestSuite;
+}
+
+export async function createTestCase(projectId: number, data: TestCaseInput): Promise<TestCase> {
+  const response = await client.apiCall.invoke({
+    url: `/api/v1/testing/projects/${projectId}/cases`,
+    method: 'POST',
+    data,
+  });
+  return response.data as TestCase;
+}
+
+export async function updateTestCase(
+  caseId: number,
+  data: Partial<TestCaseInput> & { case_state?: CaseState },
+): Promise<TestCase> {
+  const response = await client.apiCall.invoke({
+    url: `/api/v1/testing/cases/${caseId}`,
+    method: 'PUT',
+    data,
+  });
+  return response.data as TestCase;
+}
+
+export async function deleteTestCase(caseId: number): Promise<void> {
+  await client.apiCall.invoke({
+    url: `/api/v1/testing/cases/${caseId}`,
+    method: 'DELETE',
+    data: {},
+  });
+}
+
+export async function executeTestRun(projectId: number): Promise<TestRun> {
+  const response = await client.apiCall.invoke({
+    url: `/api/v1/testing/projects/${projectId}/runs`,
+    method: 'POST',
+    data: {},
+    options: { timeout: TEST_TIMEOUT_MS },
+  });
+  return response.data as TestRun;
+}
+
+export const CASE_TYPE_LABEL: Record<CaseType, string> = {
+  structure: '结构',
+  behavior: '交互',
+  content: '内容',
+};
+
 export function formatDateTime(value: string | null): string {
   if (!value) return '—';
   const date = new Date(value);

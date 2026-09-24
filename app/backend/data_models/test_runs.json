@@ -1,0 +1,45 @@
+{
+    "title": "test_runs",
+    "type": "object",
+    "required": [
+        "id",
+        "user_id",
+        "project_id",
+        "status"
+    ],
+    "properties": {
+        "id": {
+            "type": "integer"
+        },
+        "user_id": {
+            "type": "string"
+        },
+        "project_id": {
+            "type": "integer"
+        },
+        "status": {
+            "type": "string"
+        },
+        "triggered_by": {
+            "type": "string"
+        },
+        "total": {
+            "type": "integer"
+        },
+        "passed": {
+            "type": "integer"
+        },
+        "failed": {
+            "type": "integer"
+        },
+        "duration_ms": {
+            "type": "integer"
+        },
+        "results_json": {
+            "type": "string"
+        },
+        "error_message": {
+            "type": "string"
+        }
+    }
+}

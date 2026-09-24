@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { AlertTriangle, ArrowLeft, ExternalLink, Loader2, RefreshCw } from 'lucide-react';
 import SiteHeader from '@/components/SiteHeader';
+import TestSuitePanel from '@/components/TestSuitePanel';
 import { useAuthStatus } from '@/hooks/useAuthStatus';
 import { useProjectPipeline, useRetryProject } from '@/hooks/useProjects';
 import { apiErrorMessage, formatDateTime, type ProjectStatus, type StageState } from '@/lib/projects';
@@ -354,6 +355,8 @@ export default function ProjectDetail() {
             {retry.isError && (
               <p className="mt-4 text-[13px] text-[#f87171]">{apiErrorMessage(retry.error, '重试失败，请稍后再试')}</p>
             )}
+
+            <TestSuitePanel projectId={project.id} enabled={state === 'authenticated'} />
           </>
         )}
       </main>

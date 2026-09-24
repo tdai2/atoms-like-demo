@@ -52,7 +52,8 @@
 |------|------|
 | `src/pages/Index.tsx` | 首页与生成链路：输入台、服务端阶段轮询、iframe 预览窗、模板库、定价、CTA |
 | `src/pages/Projects.tsx` | 我的项目列表：加载 / 未登录 / 空列表 / 失败重试 / 成功列表与额度 |
-| `src/pages/ProjectDetail.tsx` | 项目详情：六阶段流水线快照、方案、测试报告、版本与重试 |
+| `src/pages/ProjectDetail.tsx` | 项目详情：六阶段流水线快照、方案、测试报告、版本、重试与测试面板入口 |
+| `src/components/TestSuitePanel.tsx` | 阶段四测试面板：用例生成与手动增删改、执行、结果统计与运行历史切换 |
 | `src/pages/Changelog.tsx` | 更新日志页：类型筛选计数、版本锚点、发布记录时间线、`LATEST` 标记 |
 | `src/pages/Placeholder.tsx` | 未建设模块的统一说明页，模板详情复用 |
 | `src/pages/SignIn.tsx`、`src/pages/SignUp.tsx` | 平台账号登录与注册入口 |
@@ -95,6 +96,13 @@
 | `retryProject(id)` | `POST` | `/api/v1/generation/projects/{id}/retry` |
 | `fetchVersions(id)` | `GET` | `/api/v1/generation/projects/{id}/versions` |
 | `deleteProject(id)` | `DELETE` | `/api/v1/generation/projects/{id}` |
+| `fetchTestSuite(id)` | `GET` | `/api/v1/testing/projects/{id}/suite` |
+| `generateTestCases(id)` | `POST` | `/api/v1/testing/projects/{id}/cases/generate` |
+| `createTestCase(id, payload)` | `POST` | `/api/v1/testing/projects/{id}/cases` |
+| `updateTestCase(caseId, payload)` | `PUT` | `/api/v1/testing/cases/{caseId}` |
+| `deleteTestCase(caseId)` | `DELETE` | `/api/v1/testing/cases/{caseId}` |
+| `runTestSuite(id)` | `POST` | `/api/v1/testing/projects/{id}/runs` |
+| `fetchTestRun(runId)` | `GET` | `/api/v1/testing/runs/{runId}` |
 
 所有请求通过 `client.apiCall.invoke()` 发出，不在前端直连数据库或另建 fetch 封装。
 生成类请求超时为 `PIPELINE_TIMEOUT_MS = 60_000`；列表、版本与删除使用 SDK 默认超时。

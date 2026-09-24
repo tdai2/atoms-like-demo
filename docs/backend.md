@@ -190,6 +190,8 @@ curl http://localhost:8000/database/health
 | `build_tasks` | `user_id` `project_id` `run_no` `stage` `stage_name` `stage_order` `stage_state` `stage_log` `error_message` `output_summary` | 六阶段任务，按 `run_no` 分批 |
 | `project_versions` | `user_id` `project_id` `version` `diff_summary` `files_key` | 版本链 |
 | `usage_quotas` | `user_id` `period` `plan` `used` `quota_limit` | 按自然月计数配额 |
+| `test_cases` | `user_id` `project_id` `title` `case_type` `preconditions` `steps` `expected` `assertion` `source` `case_state` | 项目测试用例。`case_type ∈ {structure, interaction, content}`；`source ∈ {auto, manual}`；`case_state ∈ {active, disabled}`，停用用例不参与执行；`assertion` 是可在产物源码中匹配的片段 |
+| `test_runs` | `user_id` `project_id` `status` `triggered_by` `total` `passed` `failed` `duration_ms` `results_json` `error_message` | 每次测试执行的统计与逐用例结果。`status ∈ {passed, failed}`，`triggered_by` 记录发起人，`results_json` 保存逐例明细 |
 
 约定：
 
@@ -296,6 +298,20 @@ curl http://localhost:8000/database/health
 | GET | `/projects/{project_id}/versions` | 版本链（按版本号倒序） |
 | DELETE | `/projects/{project_id}` | 删除项目及其任务与版本记录 |
 | GET | `/templates/{template_key}` | 模板推荐方案（确定性数据，不消耗模型额度） |
+
+### 测试能力 `/api/v1/testing`
+
+| 方法 | 路径 | 说明 |
+|------|------|------|
+| GET | `/projects/{project_id}/suite` | 测试面板快照：用例列表、最近运行与运行历史 |
+| POST | `/projects/{project_id}/cases/generate` | 基于方案与真实产物生成 6-10 条用例（`claude-opus-5`），替换既有 `auto` 用例，保留手动用例 |
+| POST | `/projects/{project_id}/cases` | 手动新增用例 |
+| PUT | `/cases/{case_id}` | 编辑用例（标题、类型、步骤、预期、断言、启用状态） |
+| DELETE | `/cases/{case_id}` | 删除用例；历史运行记录保留 |
+| POST | `/projects/{project_id}/runs` | 在当前产物上执行全部启用用例并落库 |
+| GET | `/runs/{run_id}` | 单次运行详情（逐例结果与失败原因） |
+
+约束：没有 `artifact_key` 的项目拒绝生成用例与执行（无产物可测，返回可见错误）；生成与执行会回读对象存储中的真实产物，断言通过与否由产物内容决定，**不由模型判定**；`artifact_key` 为空或回读失败即失败，不伪造通过。删除项目会一并清理该项目的用例与运行记录。
 
 响应核心结构 `PipelineResponse`：`run_no`、`spec`、`stages[]`、`test_report[]`、`quota`、`project`。
 `project.preview_url` 由后端按 `artifact_key` 即时解析，**不落库**。
@@ -439,6 +455,7 @@ python -c "import main; import services.generation; import services.pipeline_run
 | `verify_pipeline.py` | 六阶段端到端：状态 `succeeded`、结构校验、冒烟检查、覆盖率、版本摘要、重试 `run_no` 递增且不重复扣额 |
 | `verify_quota_refund.py` | 模型失败路径：额度回到 `0/20`、无残留项目、无残留阶段任务 |
 | `verify_gateway_timeout.py` | HTTP 级：创建耗时、轮询耗时、并发轮询、无 5xx、无 `QueuePool` 超时 |
+| `verify_test_suite.py` | 阶段四测试链路：无产物项目拒绝生成与执行、通过/失败统计与产物一致、停用用例被排除、运行历史倒序、跨用户项目与运行访问均被拒、删除用例不影响历史、项目删除后用例与运行清理干净 |
 
 注意：脚本依赖平台 AI 额度；额度不足时失败原因是 `insufficient_ai_balance`（HTTP 403），
 属于外部额度问题而非代码缺陷，此时阶段会落为可见失败并触发首轮退款。
