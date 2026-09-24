@@ -11,7 +11,7 @@ from typing import Optional
 
 import httpx
 
-from schemas.storage import FileUpDownRequest
+from schemas.storage import FileUpDownRequest, ObjectRequest
 from services.storage import StorageService
 
 try:
@@ -72,6 +72,14 @@ async def fetch_html(object_key: str) -> Optional[str]:
     except httpx.HTTPError as exc:
         logger.warning("artifact fetch failed: %s", exc)
         return None
+
+
+async def delete_object(object_key: str) -> bool:
+    """删除产物对象；用于版本清理与验证数据的回收。"""
+    service = StorageService()
+    request = ObjectRequest(bucket_name=BUCKET_NAME, object_key=object_key)
+    result = await service.delete_object(request)
+    return bool(result.success)
 
 
 async def public_url(object_key: str) -> str:

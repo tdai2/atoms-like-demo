@@ -290,6 +290,163 @@ export const CASE_TYPE_LABEL: Record<CaseType, string> = {
   content: '内容',
 };
 
+export type BugSeverity = 'low' | 'medium' | 'high' | 'critical';
+export type BugStatus = 'open' | 'fixing' | 'fixed' | 'fix_failed' | 'closed';
+export type FixStatus = 'fixed' | 'fix_failed';
+
+/** 阶段五：修复后在新产物上重跑用例的复测摘要。 */
+export interface RetestSummary {
+  executed: boolean;
+  run_id?: number;
+  status?: RunStatus;
+  total?: number;
+  passed?: number;
+  failed?: number;
+  duration_ms?: number;
+  related_case_id?: number | null;
+  related_case?: CaseResult | null;
+  reason?: string;
+  results?: CaseResult[];
+}
+
+/** 阶段五：一次自动修复的记录，含模型、源/目标版本、变更清单与复测结果。 */
+export interface BugFixLog {
+  id: number;
+  bug_id: number;
+  status: FixStatus;
+  attempt_no: number;
+  model: string;
+  source_version: number;
+  target_version: number;
+  artifact_key: string;
+  diff_summary: string;
+  changes: string[];
+  retest: RetestSummary | null;
+  error_message: string;
+  duration_ms: number;
+  created_at: string | null;
+}
+
+/** 阶段五：一条缺陷记录。 */
+export interface BugItem {
+  id: number;
+  project_id: number;
+  title: string;
+  description: string;
+  severity: BugSeverity;
+  reproduction: string;
+  related_case_id: number | null;
+  status: BugStatus;
+  fix_attempts: number;
+  latest_fix_id: number | null;
+  resolution: string;
+  target_version: number | null;
+  created_at: string | null;
+  updated_at: string | null;
+  latest_fix: BugFixLog | null;
+}
+
+export interface BugStats {
+  total: number;
+  open: number;
+  fixing: number;
+  fixed: number;
+  fix_failed: number;
+  closed: number;
+}
+
+export interface BugPanel {
+  project_id: number;
+  artifact_ready: boolean;
+  latest_version: number;
+  stats: BugStats;
+  bugs: BugItem[];
+  fixes: BugFixLog[];
+}
+
+export interface BugInput {
+  title: string;
+  description?: string;
+  severity?: BugSeverity;
+  reproduction?: string;
+  related_case_id?: number | null;
+}
+
+/** 自动修复会调用模型改写产物并上传新版本，给足超时余量。 */
+export const BUG_TIMEOUT_MS = 240_000;
+
+export const SEVERITY_LABEL: Record<BugSeverity, string> = {
+  low: '轻微',
+  medium: '一般',
+  high: '严重',
+  critical: '致命',
+};
+
+export const BUG_STATUS_LABEL: Record<BugStatus, string> = {
+  open: '待修复',
+  fixing: '修复中',
+  fixed: '已修复',
+  fix_failed: '修复失败',
+  closed: '已关闭',
+};
+
+export async function fetchBugPanel(projectId: number): Promise<BugPanel> {
+  const response = await client.apiCall.invoke({
+    url: `/api/v1/bugs/projects/${projectId}`,
+    method: 'GET',
+    data: {},
+  });
+  return response.data as BugPanel;
+}
+
+export async function createBug(projectId: number, data: BugInput): Promise<BugItem> {
+  const response = await client.apiCall.invoke({
+    url: `/api/v1/bugs/projects/${projectId}`,
+    method: 'POST',
+    data,
+  });
+  return response.data as BugItem;
+}
+
+export async function updateBug(
+  bugId: number,
+  data: Partial<BugInput> & { status?: BugStatus },
+): Promise<BugItem> {
+  const response = await client.apiCall.invoke({
+    url: `/api/v1/bugs/${bugId}`,
+    method: 'PUT',
+    data,
+  });
+  return response.data as BugItem;
+}
+
+export async function deleteBug(bugId: number): Promise<void> {
+  await client.apiCall.invoke({
+    url: `/api/v1/bugs/${bugId}`,
+    method: 'DELETE',
+    data: {},
+  });
+}
+
+export async function fixBug(bugId: number): Promise<BugItem> {
+  const response = await client.apiCall.invoke({
+    url: `/api/v1/bugs/${bugId}/fix`,
+    method: 'POST',
+    data: {},
+    options: { timeout: BUG_TIMEOUT_MS },
+  });
+  return response.data as BugItem;
+}
+
+export async function fetchBugFixes(bugId: number): Promise<BugFixLog[]> {
+  const response = await client.apiCall.invoke({
+    url: `/api/v1/bugs/${bugId}/fixes`,
+    method: 'GET',
+    data: {},
+  });
+  return response.data as BugFixLog[];
+}
+
 export function formatDateTime(value: string | null): string {
   if (!value) return '—';
   const date = new Date(value);

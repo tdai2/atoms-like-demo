@@ -344,7 +344,11 @@ export default function TestSuitePanel({ projectId, enabled }: { projectId: numb
             </span>
             <span className="font-mono-ui text-[11px] text-[#6b727c]">
               失败 {activeRun.failed} · 耗时 {(activeRun.duration_ms / 1000).toFixed(2)}s ·{' '}
-              {activeRun.triggered_by === 'auto' ? '自动触发' : '手动触发'}
+              {activeRun.triggered_by === 'auto'
+                ? '自动触发'
+                : activeRun.triggered_by === 'fix'
+                  ? '修复后复测'
+                  : '手动触发'}
             </span>
             <span className="font-mono-ui ml-auto text-[11px] text-[#6b727c]">
               {formatDateTime(activeRun.created_at)}
