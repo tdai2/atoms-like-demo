@@ -1,11 +1,7 @@
-export type MiniAppKind = 'dashboard' | 'landing' | 'todo';
-
 export interface PromptPreset {
   id: string;
   label: string;
   prompt: string;
-  kind: MiniAppKind;
-  appName: string;
   stack: string[];
 }
 
@@ -14,24 +10,18 @@ export const PROMPT_PRESETS: PromptPreset[] = [
     id: 'dashboard',
     label: '增长数据看板',
     prompt: '做一个 SaaS 增长数据看板，包含核心指标卡、趋势图和渠道排行',
-    kind: 'dashboard',
-    appName: 'growth-dashboard',
     stack: ['React', 'Recharts', 'Tailwind'],
   },
   {
     id: 'landing',
     label: '产品落地页',
     prompt: '做一个咖啡订阅品牌的落地页，要有首屏主视觉、套餐价格和订阅表单',
-    kind: 'landing',
-    appName: 'brew-club-landing',
     stack: ['React', 'Tailwind', 'Vite'],
   },
   {
     id: 'todo',
     label: '团队待办应用',
     prompt: '做一个团队任务协作应用，支持添加任务、勾选完成和按状态统计',
-    kind: 'todo',
-    appName: 'team-tasks',
     stack: ['React', 'Zustand', 'Tailwind'],
   },
 ];

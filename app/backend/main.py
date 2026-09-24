@@ -77,6 +77,14 @@ async def lifespan(app: FastAPI):
         pass
 
     logger.info("=== Application startup completed successfully ===")
+    # 进程重启会让「进行中」的项目失去执行者，这里重新调度未完成项目；
+    # 恢复失败不应阻断启动，用户再次访问项目详情时仍会重新调度。
+    try:
+        from services.pipeline_runner import resume_pending_projects
+
+        await resume_pending_projects()
+    except Exception as exc:  # noqa: BLE001 - 启动恢复是尽力而为
+        logger.warning("resume unfinished generation projects failed: %s", exc)
     yield
     if not get_env_bool("MGX_IGNORE_MODULE_INIT", default=True):
         # MODULE_SHUTDOWN_START

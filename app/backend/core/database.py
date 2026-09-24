@@ -160,10 +160,16 @@ class DatabaseManager:
                 # and pool_recycle drops connections idle past the recycle window
                 # (kept < typical serverless Postgres idle timeout).
                 engine_kwargs["pool_pre_ping"] = get_env_bool("DB_POOL_PRE_PING", default=True)
-                engine_kwargs["pool_size"] = get_env_int("DB_POOL_SIZE", default=1)
-                engine_kwargs["max_overflow"] = get_env_int("DB_MAX_OVERFLOW", default=0)
+                # A single connection would serialize every caller: the generation
+                # pipeline advances stages in in-process background tasks while the
+                # browser keeps polling, so one connection turns ordinary concurrent
+                # polling into ``QueuePool limit reached`` timeouts and 5xx responses.
+                # Keep the pool small but larger than one, with a generous acquisition
+                # timeout so a burst of polls waits instead of failing.
+                engine_kwargs["pool_size"] = get_env_int("DB_POOL_SIZE", default=5)
+                engine_kwargs["max_overflow"] = get_env_int("DB_MAX_OVERFLOW", default=5)
                 engine_kwargs["pool_recycle"] = get_env_int("DB_POOL_RECYCLE", default=280)
-                engine_kwargs["pool_timeout"] = get_env_int("DB_POOL_TIMEOUT", default=5)
+                engine_kwargs["pool_timeout"] = get_env_int("DB_POOL_TIMEOUT", default=30)
                 engine_kwargs["pool_use_lifo"] = get_env_bool("DB_POOL_USE_LIFO", default=True)
                 logger.info("Using pooled connections for Lambda environment (pool_pre_ping=%s, pool_size=%d, "
                             "max_overflow=%d, pool_recycle=%ds, pool_timeout=%ds, pool_use_lifo=%s)",

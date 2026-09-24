@@ -50,12 +50,14 @@
 
 | 阶段 | 状态标识 | 产出 | 失败处理 |
 |------|---------|------|---------|
-| 解析需求 | `parsing` | 结构化需求（实体、页面、交互） | 需求过于模糊时回问用户 |
-| 生成方案 | `planning` | 技术栈选型 + 组件树 | 降级到最接近的模板方案 |
-| 编写代码 | `coding` | 文件集合（路径 → 内容） | 记录失败文件，保留已生成部分 |
-| 构建校验 | `building` | 构建日志 + 产物 | 回灌错误信息触发一次自动修复 |
-| 测试验证 | `testing` | 测试报告（单元/冒烟） | 定位失败用例并回灌到代码生成阶段 |
-| 发布预览 | `deploying` | 预览 URL | 保留上一个可用版本 |
+| 解析需求 | `parsing` | 结构化需求 `spec_json`（实体、页面、技术栈、名称） | 上游不可用时停在失败阶段并暴露原因 |
+| 生成方案 | `planning` | 方案 `plan_json`（文件清单与组件树） | 同上；结构化输出先本地容错，再触发一次模型修复 |
+| 编写代码 | `coding` | 单文件应用上传对象存储，写入 `artifact_key` | 同上；不落半成品 |
+| 构建校验 | `building` | 结构校验结果写入 `test_report_json` | 结构校验不通过即判定失败并暴露缺失项 |
+| 测试验证 | `testing` | 基于真实产物内容生成测试报告（单元 / 冒烟 / 覆盖率） | 同上 |
+| 发布预览 | `deploying` | 按对象键解析可访问地址并校验可达 | 地址不可访问即判定失败并暴露原因 |
+
+阶段状态取值为 `pending` / `running` / `done` / `failed`；项目状态取值为 `queued` / `pending` / `running` / `succeeded` / `failed`。
 
 失败不清空任务，而是停在失败阶段并暴露原因——对应 `mission.md` 的「过程透明优于结果惊喜」。
 
@@ -63,13 +65,13 @@
 
 | 表 | 关键字段 | 说明 |
 |----|---------|------|
-| `projects` | `id` `user_id` `name` `prompt` `status` `preview_url` | 一个用户项目 |
-| `project_versions` | `id` `project_id` `version` `diff_summary` `files_key` | 版本链，支持回溯 |
-| `build_tasks` | `id` `project_id` `stage` `state` `log` `error` | 驱动生成时间线 |
-| `templates` | `id` `name` `category` `schema` | 模板库，可被项目引用为起点 |
-| `usage_quotas` | `user_id` `period` `used` `limit` | 按套餐限制生成次数 |
+| `projects` | `id` `user_id` `name` `prompt` `status` `current_stage` `template_key` `latest_version` `spec_json` `plan_json` `artifact_key` `test_report_json` `preview_url` | 一个用户项目 |
+| `project_versions` | `id` `user_id` `project_id` `version` `diff_summary` `files_key` | 版本链，支持回溯 |
+| `build_tasks` | `id` `user_id` `project_id` `run_no` `stage` `stage_name` `stage_order` `stage_state` `stage_log` `error_message` `output_summary` | 驱动生成时间线，按 `run_no` 分批 |
+| `usage_quotas` | `user_id` `period` `plan` `used` `quota_limit` | 按自然月限制生成次数 |
+| `users`、`oidc_states` | `id`(=平台 `sub`) `email` `role` / `state` `nonce` `code_verifier` `expires_at` | 平台身份映射与登录临时数据，详见 `docs/backend.md` |
 
-文件产物不入库，存对象存储，库中只保留引用键。
+文件产物不入库，存对象存储，库中只保留对象键（`artifact_key` / `files_key`）。`projects.preview_url` 字段保留但**不写入签名地址**：签名链接会过期，预览地址每次请求按 `artifact_key` 即时解析。模板库是后端确定性数据（`GET /api/v1/generation/templates/{key}`），不单独建表。
 
 ## 二、模块划分
 
@@ -80,9 +82,11 @@
 | 路由壳 | 首页与次级页面路由挂载 | `src/App.tsx` |
 | 首页 | 输入台、时间线、能力、模板库、定价、CTA | `src/pages/Index.tsx` |
 | 顶栏 | 粘性导航与移动端菜单 | `src/components/SiteHeader.tsx` |
-| 预览渲染 | 三类迷你应用的真实 DOM 渲染 | `src/components/MiniApp.tsx` |
+| 真实预览 | iframe 加载对象存储产物地址，含加载、空地址与失败状态 | `src/pages/Index.tsx`、`src/pages/ProjectDetail.tsx` |
+| 项目页面 | 我的项目列表与项目详情（流水线快照、方案、测试报告、版本、重试、删除） | `src/pages/Projects.tsx`、`src/pages/ProjectDetail.tsx` |
+| 账号与入口 | 账号三态、登录 / 注册 / 登出回跳、免费开始意图消费 | `src/hooks/useAuthStatus.ts`、`src/pages/SignIn.tsx`、`src/pages/SignUp.tsx`、`src/pages/LogoutCallbackPage.tsx`、`src/lib/startFree.ts` |
 | 占位页 | 未建设模块的统一说明，模板详情复用 | `src/pages/Placeholder.tsx` |
-| 静态数据 | 预设提示词、构建步骤、模板、能力、定价 | `src/data/site.ts` |
+| 静态数据 | 预设提示词、构建步骤、模板、能力、定价、发布记录 | `src/data/site.ts`、`src/data/changelog.ts` |
 | 设计系统 | 颜色、字体、网格背景、动效 | `src/index.css` `DESIGN.md` |
 
 ### 2.2 后端模块（阶段二已落地）
@@ -92,21 +96,23 @@
 | 鉴权 | 会话校验与用户身份解析 | 复用 Atoms 内置账号体系（`dependencies/auth.py`），不自建 |
 | 项目管理 | 项目增删改查、版本列表与回溯 | `GET/POST /api/v1/generation/projects`、`/projects/{id}/versions`、`DELETE /projects/{id}` |
 | 生成编排 | 创建生成任务、推进阶段、写入状态 | `POST /api/v1/generation/projects`、`GET /api/v1/generation/projects/{id}`、`POST /projects/{id}/retry` |
-| 方案推导 | 由需求文本推导页面、实体与技术栈 | `GET /api/v1/generation/templates/{key}`；阶段三替换为 AI 网关 |
+| 方案推导 | 由需求文本经模型推导页面、实体与技术栈 | `services/generation_ai.py`（`deepseek-v4-flash` 解析、`claude-opus-5` 规划） |
+| 后台执行 | 进程内工作器推进阶段、项目去重、启动恢复未完成项目 | `services/pipeline_runner.py` |
 | 实体 CRUD | 四张表的自动生成路由，均按用户隔离 | `/api/v1/entities/{projects,build_tasks,project_versions,usage_quotas}` |
-| 产物存储 | 生成文件的读写与预览资源托管 | 阶段三接入；当前版本记录只保存对象存储引用键 |
-| 配额 | 按套餐校验与计数 | `services/generation.py` 的 `get_or_create_quota`，创建任务前校验并扣减 |
+| 产物存储 | HTML 上传、回读校验、预览地址解析与可达性检查 | `services/generation_artifacts.py`、`services/storage.py`；bucket `generation-artifacts` |
+| 配额 | 按自然月校验与计数，条件原子扣减 + 失败退款 | `services/generation.py` 的 `get_or_create_quota` / `consume_quota` / `refund_quota` |
 
 ### 2.3 模块依赖方向
 
 ```
 体验层 → 接口层 → { 鉴权, 项目管理, 生成编排 }
-                      生成编排 → AI 网关 → 模型
-                      生成编排 → 产物存储
+                      生成编排 → AI 调用 → 模型
+                      生成编排 → 产物存储 → 对象存储
                       生成编排 → 配额
+                      接口层 → 后台工作器 → 生成编排（异步推进，独立短会话）
 ```
 
-依赖单向向下，禁止反向调用；AI 网关只被生成编排使用，保证模型替换不外溢。
+依赖单向向下，禁止反向调用；AI 调用只被生成编排使用，保证模型替换不外溢。后台工作器只调用生成编排的阶段推进函数，不直接触碰模型与对象存储细节。
 
 ## 三、技术选型
 
@@ -140,11 +146,15 @@
 | 决策 | 选择 | 理由 |
 |------|------|------|
 | 生成任务同步还是异步 | 异步 + 轮询 | 生成耗时长，同步请求会超时且无法展示过程 |
-| 预览窗形态 | 当前真实组件渲染，接入后改 iframe | 演示形态下更可信，接入后自然过渡到真实部署 |
+| 预览窗形态 | iframe 加载对象存储中的真实产物 | 生成结果已是可运行应用，iframe 才能如实呈现，避免用本地组件冒充产物 |
 | 模板缩略图 | CSS 线框 | 避免无意义配图，保持工程风一致 |
-| 生成推进方式 | 阶段一为定时状态机，阶段二起改为服务端阶段状态 + 前端轮询 | 演示期无需后端；接入后过程可查询、刷新不丢失 |
+| 生成推进方式 | 服务端阶段状态 + 后台工作器 + 前端轮询 | 过程可查询、刷新不丢失；创建请求立即返回，慢调用不占用请求生命周期 |
 | 是否自建管理后台登录 | 否 | 用账号角色区分权限，不做第二套认证 |
-| 产物是否入库 | 否，存对象存储 | 避免大字段拖垮数据库性能 |
+| 产物是否入库 | 否，存对象存储，库中只留对象键 | 避免大字段拖垮数据库性能 |
+| 产物地址是否入库 | 否，按对象键即时解析 | 签名地址有有效期，持久化会产生失效链接 |
+| 慢调用事务边界 | AI 与对象存储调用前后不持有数据库事务 | 长事务占用连接池会与并发轮询争抢，放大为网关 502 |
+| 配额并发保护 | 条件原子更新扣减，模型失败退款 | 并发首次创建不超扣，外部模型不可用时不白扣用户额度 |
+| 阶段并发保护 | 数据库原子抢占 + `600` 秒陈旧阶段回收 | 多端轮询与多进程部署都不会重复执行同一阶段 |
 
 ## 四、实施计划
 
@@ -152,10 +162,10 @@
 |------|------|---------------------------|
 | 一（已完成） | 纯前端演示：输入台、时间线、预览窗、模板库、定价 | 三十秒内理解产品主张                |
 | 二（已完成） | 激活后端，落地账号、项目表、生成接口 | 登录后能看到自己的项目列表             |
-| 三 | 接入真实模型生成，替换预设匹配 | 输入任意需求产出可访问链接             |
-| 四 | 对话式增量修改、版本回溯 | 追加需求只改动对应部分               |
-| 五 | 测试用例生成、执行与结果记录 | 可以自动或手动生成测试用例，执行并查询历史测试记录 |
-| 六 | Bug 提交、记录与自动修复 | 能提交 bug、记录 bug，并尝试自行解决    |
+| 三（已完成） | 接入真实模型生成、后台异步执行与可靠性加固 | 输入任意需求产出可访问链接             |
+| 四 | 测试用例生成、执行与结果记录 | 可以自动或手动生成测试用例，执行并查询历史测试记录 |
+| 五 | Bug 提交、记录与自动修复 | 能提交 bug、记录 bug，并尝试自行解决    |
+| 六 | 对话式增量修改、版本回溯 | 追加需求只改动对应部分               |
 | 七 | 自定义域名、团队协作与权限 | 项目可对外正式发布                 |
 
 ### 阶段一交付清单
@@ -164,7 +174,7 @@
 |--------|---------|
 | 需求输入台（预设胶囊、⌘/Ctrl + Enter、空输入禁用态） | `app/frontend/src/pages/Index.tsx` |
 | 六阶段生成时间线与定时推进状态机 | `app/frontend/src/pages/Index.tsx`、`src/data/site.ts` |
-| 应用预览窗与测试报告面板 | `src/components/MiniApp.tsx`、`src/data/site.ts` |
+| 应用预览窗与测试报告面板 | `src/pages/Index.tsx`、`src/data/site.ts`（阶段三起预览窗改为 iframe，原模拟预览组件已移除） |
 | 能力介绍、模板库与分类筛选、定价、CTA | `src/pages/Index.tsx`、`src/data/site.ts` |
 | 次级占位页（模板详情、文档、计费） | `src/pages/Placeholder.tsx`、`src/App.tsx` |
 | 暗色工程风设计系统与动效、可访问性 | `src/index.css`、`DESIGN.md` |
@@ -185,18 +195,32 @@
 | 我的项目列表页（加载 / 未登录 / 空列表 / 失败重试 / 成功列表） | `src/pages/Projects.tsx` |
 | 项目详情页（流水线快照、方案、测试报告、失败重试） | `src/pages/ProjectDetail.tsx` |
 | 首页生成链路改为创建任务 + 轮询服务端阶段状态 | `src/pages/Index.tsx` |
-| 更新日志页与发布记录数据源（最新 `v0.7.0` 覆盖账号与项目持久化） | `src/pages/Changelog.tsx`、`src/data/changelog.ts` |
+| 更新日志页与发布记录数据源（最新 `v0.8.0` 覆盖真实生成与可访问产物） | `src/pages/Changelog.tsx`、`src/data/changelog.ts` |
 | 顶栏账号区（登录 / 免费开始 / 账号邮箱 / 退出登录）与登出降级 | `src/components/SiteHeader.tsx`、`src/hooks/useAuthStatus.ts`、`app/backend/routers/auth.py` |
 
 验证方式：后端 Python 语法检查通过；`pnpm run lint` 与 `pnpm run build` 通过。
 
-阶段二不产出真实部署地址：`projects.preview_url` 保持为空，预览窗仍由 `MiniApp` 组件渲染，避免出现假的可访问链接。
+### 阶段三交付清单
 
-### 阶段三迁移要点
+| 交付项 | 落地位置 |
+|--------|---------|
+| 真实模型调用：需求解析 `deepseek-v4-flash`，方案规划与代码编写 `claude-opus-5` | `app/backend/services/generation_ai.py` |
+| 模型硬超时（180 秒）、上游异常收敛为可读业务错误、结构化输出容错（JSON 块提取、尾随逗号清理、截断补全、一次修复） | `app/backend/services/generation_ai.py` |
+| 六阶段由真实执行结果驱动，失败落在失败阶段并暴露原因 | `app/backend/services/generation.py` |
+| 后台工作器：项目去重、限时 kick、启动恢复未完成项目 | `app/backend/services/pipeline_runner.py` |
+| 产物上传、回读校验与预览地址可达性检查（bucket `generation-artifacts`，键 `projects/{id}/v{n}/index.html`） | `app/backend/services/generation_artifacts.py` |
+| 预览窗切换为 iframe，含加载、空地址、失败与重试状态 | `src/pages/Index.tsx`、`src/pages/ProjectDetail.tsx` |
+| 配额条件原子扣减与模型失败退款、阶段原子抢占与 `600` 秒陈旧回收 | `app/backend/services/generation.py` |
+| 网关 502/524 修复：阶段短事务、连接池调参、请求归还连接后再等待工作器 | `app/backend/services/generation.py`、`app/backend/core/database.py`、`app/backend/routers/generation.py` |
+| 登出回跳路由 `/logout-callback`，并移除无引用的模拟预览组件 | `src/pages/LogoutCallbackPage.tsx`、`src/App.tsx` |
 
-1. `services/generation.py` 中基于关键词的 `build_spec` 与 `stage_output` 替换为 AI 调用（方案与代码生成用 `claude-opus-5`，需求解析用 `deepseek-v4-flash`）。
-2. 阶段推进由「按创建时间推导」改为真实执行结果驱动，`build_tasks` 的状态契约保持不变。
-3. `projects.preview_url` 写入真实部署地址，预览窗由 `MiniApp` 组件切换为 iframe。
-4. 产物写入对象存储，`project_versions.files_key` 指向真实产物。
+验证方式：`verify_stage3.py`（真实 AI、上传 `200`、回读成功、预览地址 `200`、无 iframe 阻断头）、`verify_pipeline.py`（状态 `succeeded`、结构校验 `5/5`、冒烟 `4/4`、版本与重试不重复扣额）、`verify_quota_refund.py`（模型失败退款且无残留）、`verify_gateway_timeout.py`（创建与并发轮询耗时、无 `5xx`）。
 
-生成接口与配额校验的契约不变，前端无需改动调用方式。
+阶段三起预览地址按对象键即时解析，`projects.preview_url` 不落库；重试复用已落库的 `spec_json`，不再重复消耗解析阶段。生成接口与配额校验的契约保持不变，前端调用方式未改动。
+
+### 未完成事项
+
+- 生产启动脚本 `app/start_app_v2.sh` 的后端命令仍带 `--reload`，生产部署需去掉。
+- 删除项目目前只清理业务表，不清理对象存储产物，会产生孤儿对象。
+- 进程内后台工作器适合常驻进程；若改为无服务器形态，需评估请求结束后任务被冻结的风险。
+- 历史额度消耗与项目记录不一致的排查结论见 `.atoms/PROGRESS.md`。

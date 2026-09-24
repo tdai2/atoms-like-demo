@@ -1,43 +1,45 @@
 {
     "title": "projects",
-    "description": "用户通过一句自然语言需求创建的生成项目，一条记录代表一个应用",
     "type": "object",
     "properties": {
         "id": {
-            "type": "integer",
-            "description": "自增主键"
+            "type": "integer"
         },
         "user_id": {
-            "type": "string",
-            "description": "所属用户标识，由系统维护，业务侧不要赋值"
+            "type": "string"
         },
         "name": {
-            "type": "string",
-            "description": "项目名称，默认取需求前若干字符"
+            "type": "string"
         },
         "prompt": {
-            "type": "string",
-            "description": "用户提交的原始需求描述，保留全文不截断"
+            "type": "string"
         },
         "status": {
-            "type": "string",
-            "description": "项目状态，取值为 queued / running / succeeded / failed"
+            "type": "string"
         },
         "current_stage": {
-            "type": "string",
-            "description": "当前所处流水线阶段标识，如 parsing / planning / coding / building / testing / deploying"
+            "type": "string"
         },
         "template_key": {
-            "type": "string",
-            "description": "作为起点的模板标识，非模板创建时为空字符串"
+            "type": "string"
         },
         "preview_url": {
-            "type": "string",
-            "description": "发布后可访问的预览地址，未发布时为空字符串"
+            "type": "string"
         },
         "latest_version": {
-            "type": "integer",
-            "description": "最新版本号，从 1 开始递增"
+            "type": "integer"
+        },
+        "spec_json": {
+            "type": "string"
+        },
+        "plan_json": {
+            "type": "string"
+        },
+        "artifact_key": {
+            "type": "string"
+        },
+        "test_report_json": {
+            "type": "string"
         }
     },
     "required": [
