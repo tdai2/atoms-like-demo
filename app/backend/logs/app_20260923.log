@@ -3039,3 +3039,55 @@ For more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/St
 2026-09-23 20:01:06,316 - dependencies.auth - DEBUG - Authentication required for request GET /api/v1/auth/me
 2026-09-23 20:01:06,324 - dependencies.auth - DEBUG - Authentication required for request GET /api/v1/auth/me
 2026-09-23 20:01:06,332 - dependencies.auth - DEBUG - Authentication required for request GET /api/v1/auth/me
+2026-09-23 20:02:00,542 - main - INFO - === Logging system initialized ===
+2026-09-23 20:02:00,542 - main - INFO - Log file: logs/app_20260923.log
+2026-09-23 20:02:00,542 - main - INFO - Log level: DEBUG
+2026-09-23 20:02:00,543 - main - INFO - Log date: 20260923
+2026-09-23 20:02:00,666 - main - INFO - Included router: routers.aihub.router
+2026-09-23 20:02:01,628 - main - INFO - Included router: routers.auth.router
+2026-09-23 20:02:02,240 - main - INFO - Included router: routers.bug_fix.router
+2026-09-23 20:02:02,373 - main - INFO - Included router: routers.bug_fix_logs.router
+2026-09-23 20:02:02,400 - main - INFO - Included router: routers.bugs.router
+2026-09-23 20:02:02,447 - main - INFO - Included router: routers.build_tasks.router
+2026-09-23 20:02:02,464 - main - INFO - Included router: routers.generation.router
+2026-09-23 20:02:02,468 - main - INFO - Included router: routers.health.router
+2026-09-23 20:02:02,492 - main - INFO - Included router: routers.project_versions.router
+2026-09-23 20:02:02,542 - main - INFO - Included router: routers.projects.router
+2026-09-23 20:02:02,557 - main - INFO - Included router: routers.settings.router
+2026-09-23 20:02:02,573 - main - INFO - Included router: routers.storage.router
+2026-09-23 20:02:02,630 - main - INFO - Included router: routers.test_cases.router
+2026-09-23 20:02:02,658 - main - INFO - Included router: routers.test_runs.router
+2026-09-23 20:02:02,736 - main - INFO - Included router: routers.test_suite.router
+2026-09-23 20:02:02,767 - main - INFO - Included router: routers.usage_quotas.router
+2026-09-23 20:02:02,781 - main - INFO - Included router: routers.user.router
+2026-09-23 20:02:02,783 - main - INFO - === Application startup initiated ===
+2026-09-23 20:02:02,783 - main - INFO - === Application startup completed successfully ===
+2026-09-23 20:02:02,783 - core.config - DEBUG - Read dynamic attribute database_url from environment variable DATABASE_URL
+2026-09-23 20:02:02,784 - core.database - INFO - Using QueuePool for non-Lambda environment (pool_pre_ping=True, pool_size=5, max_overflow=5, pool_recycle=280s, pool_timeout=30s, pool_use_lifo=True)
+2026-09-23 20:02:02,930 - core.database - INFO - Database connection initialized successfully
+2026-09-23 20:04:38,143 - main - INFO - === Logging system initialized ===
+2026-09-23 20:04:38,143 - main - INFO - Log file: logs/app_20260923.log
+2026-09-23 20:04:38,143 - main - INFO - Log level: DEBUG
+2026-09-23 20:04:38,143 - main - INFO - Log date: 20260923
+2026-09-23 20:04:38,263 - main - INFO - Included router: routers.aihub.router
+2026-09-23 20:04:39,062 - main - INFO - Included router: routers.auth.router
+2026-09-23 20:04:39,568 - main - INFO - Included router: routers.bug_fix.router
+2026-09-23 20:04:39,696 - main - INFO - Included router: routers.bug_fix_logs.router
+2026-09-23 20:04:39,745 - main - INFO - Included router: routers.bugs.router
+2026-09-23 20:04:39,770 - main - INFO - Included router: routers.build_tasks.router
+2026-09-23 20:04:39,787 - main - INFO - Included router: routers.generation.router
+2026-09-23 20:04:39,790 - main - INFO - Included router: routers.health.router
+2026-09-23 20:04:39,829 - main - INFO - Included router: routers.project_versions.router
+2026-09-23 20:04:39,854 - main - INFO - Included router: routers.projects.router
+2026-09-23 20:04:39,873 - main - INFO - Included router: routers.settings.router
+2026-09-23 20:04:39,884 - main - INFO - Included router: routers.storage.router
+2026-09-23 20:04:39,934 - main - INFO - Included router: routers.test_cases.router
+2026-09-23 20:04:39,960 - main - INFO - Included router: routers.test_runs.router
+2026-09-23 20:04:39,979 - main - INFO - Included router: routers.test_suite.router
+2026-09-23 20:04:40,038 - main - INFO - Included router: routers.usage_quotas.router
+2026-09-23 20:04:40,065 - main - INFO - Included router: routers.user.router
+2026-09-23 20:04:40,067 - main - INFO - === Application startup initiated ===
+2026-09-23 20:04:40,067 - main - INFO - === Application startup completed successfully ===
+2026-09-23 20:04:40,067 - core.config - DEBUG - Read dynamic attribute database_url from environment variable DATABASE_URL
+2026-09-23 20:04:40,068 - core.database - INFO - Using QueuePool for non-Lambda environment (pool_pre_ping=True, pool_size=5, max_overflow=5, pool_recycle=280s, pool_timeout=30s, pool_use_lifo=True)
+2026-09-23 20:04:40,176 - core.database - INFO - Database connection initialized successfully
